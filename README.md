@@ -156,7 +156,7 @@ Back up important music and Serato library data before testing development build
 * [x] Restart warning workflow
 * [ ] Stable macOS release
 * [ ] Packaged `.pkg` installer
-* [ ] Import history
+* [x] Import history
 * [ ] Built-in logging system
 * [ ] Automatic update system
 
@@ -170,9 +170,9 @@ Back up important music and Serato library data before testing development build
 ### Distribution
 
 * [ ] Stable GitHub release
-* [ ] Release notes
-* [ ] Downloadable builds
-* [ ] Versioned releases
+* [x] Release notes
+* [x] Downloadable builds
+* [x] Versioned releases
 
 ---
 
@@ -241,3 +241,5 @@ The license for DeckReady will be specified in the repository's `LICENSE` file.
 ## DeckReady
 
 **Less file management. More time behind the decks.**
+
+**Join the community, https://discord.gg/BuVnCQ5fG9**
