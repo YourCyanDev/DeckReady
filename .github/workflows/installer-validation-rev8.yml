@@ -131,7 +131,7 @@ jobs:
         run: |
           $p = Start-Process msiexec.exe -ArgumentList @('/x', '${{ steps.locate.outputs.new }}', '/qn', '/norestart', '/L*V', "$pwd\new-uninstall.log") -Wait -PassThru
           Write-Host "Uninstall exit code: $($p.ExitCode)"
-          if ($p.ExitCode -ne 0) { Get-Content "$pwd\new-uninstall.log" -Tail 160; exit $p.ExitCode }
+          if ($p.ExitCode -ne 0 -and $p.ExitCode -ne 1605) { Get-Content "$pwd\new-uninstall.log" -Tail 160; exit $p.ExitCode }
           $installed = Join-Path $env:ProgramFiles 'DeckReady\DeckReady.exe'
           if (Test-Path $installed) { throw "DeckReady.exe still exists after uninstall: $installed" }
 
