@@ -1,0 +1,82 @@
+name: Installer validation rev8
+
+on:
+  push:
+    branches:
+      - installer-validation-rev8
+  workflow_dispatch:
+
+jobs:
+  validate-msi:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create dummy payloads
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force installer-tests\old\payload | Out-Null
+          New-Item -ItemType Directory -Force installer-tests\new\payload | Out-Null
+          Set-Content -LiteralPath installer-tests\old\payload\DeckReady.exe -Value 'OLD-DECKREADY-PAYLOAD' -Encoding ascii
+          Set-Content -LiteralPath installer-tests\new\payload\DeckReady.exe -Value 'NEW-DECKREADY-PAYLOAD' -Encoding ascii
+
+      - name: Build old MSI
+        shell: pwsh
+        run: dotnet build installer-tests\old\DeckReady.Installer.wixproj -c Release --nologo
+
+      - name: Build new MSI
+        shell: pwsh
+        run: dotnet build installer-tests\new\DeckReady.Installer.wixproj -c Release --nologo
+
+      - name: Locate MSIs
+        id: locate
+        shell: pwsh
+        run: |
+          $old = Get-ChildItem installer-tests\old -Recurse -Filter DeckReady-old.msi | Select-Object -First 1
+          $new = Get-ChildItem installer-tests\new -Recurse -Filter DeckReady-new.msi | Select-Object -First 1
+          if (-not $old) { throw 'Old MSI not found' }
+          if (-not $new) { throw 'New MSI not found' }
+          "old=$($old.FullName)" >> $env:GITHUB_OUTPUT
+          "new=$($new.FullName)" >> $env:GITHUB_OUTPUT
+          Write-Host "Old MSI: $($old.FullName)"
+          Write-Host "New MSI: $($new.FullName)"
+
+      - name: Install old MSI silently
+        shell: pwsh
+        run: |
+          $p = Start-Process msiexec.exe -ArgumentList @('/i', '${{ steps.locate.outputs.old }}', '/qn', '/norestart', '/L*V', "$pwd\old-install.log") -Wait -PassThru
+          Write-Host "Old install exit code: $($p.ExitCode)"
+          if ($p.ExitCode -ne 0) { Get-Content "$pwd\old-install.log" -Tail 120; exit $p.ExitCode }
+          $installed = Join-Path $env:ProgramFiles 'DeckReady\DeckReady.exe'
+          if (-not (Test-Path $installed)) { throw "Old payload missing: $installed" }
+          Write-Host (Get-Content $installed -Raw)
+
+      - name: Install new MSI over same version
+        shell: pwsh
+        run: |
+          $p = Start-Process msiexec.exe -ArgumentList @('/i', '${{ steps.locate.outputs.new }}', '/qn', '/norestart', '/L*V', "$pwd\new-install.log") -Wait -PassThru
+          Write-Host "New install exit code: $($p.ExitCode)"
+          if ($p.ExitCode -ne 0) { Get-Content "$pwd\new-install.log" -Tail 160; exit $p.ExitCode }
+          $installed = Join-Path $env:ProgramFiles 'DeckReady\DeckReady.exe'
+          if (-not (Test-Path $installed)) { throw "New payload missing: $installed" }
+          $content = Get-Content $installed -Raw
+          Write-Host "Installed content: $content"
+          if ($content -notmatch 'NEW-DECKREADY-PAYLOAD') { throw 'New MSI did not replace old payload' }
+
+      - name: Uninstall new MSI silently
+        shell: pwsh
+        run: |
+          $p = Start-Process msiexec.exe -ArgumentList @('/x', '${{ steps.locate.outputs.new }}', '/qn', '/norestart', '/L*V', "$pwd\new-uninstall.log") -Wait -PassThru
+          Write-Host "Uninstall exit code: $($p.ExitCode)"
+          if ($p.ExitCode -ne 0) { Get-Content "$pwd\new-uninstall.log" -Tail 160; exit $p.ExitCode }
+          $installed = Join-Path $env:ProgramFiles 'DeckReady\DeckReady.exe'
+          if (Test-Path $installed) { throw "DeckReady.exe still exists after uninstall: $installed" }
+
+      - name: Upload MSI logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-validation-rev8-logs
+          path: |
+            *.log
