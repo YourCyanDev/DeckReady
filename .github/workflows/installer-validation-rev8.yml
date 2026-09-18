@@ -1,9 +1,9 @@
-name: Installer validation rev9
+name: Installer validation rev10
 
 on:
   push:
     branches:
-      - installer-validation-rev9
+      - installer-validation-rev10
   workflow_dispatch:
 
 jobs:
@@ -13,13 +13,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Create dummy payloads
+      - name: Create dummy payloads and UI assets
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force installer-tests\old\payload | Out-Null
           New-Item -ItemType Directory -Force installer-tests\new\payload | Out-Null
           Set-Content -LiteralPath installer-tests\old\payload\DeckReady.exe -Value 'OLD-DECKREADY-PAYLOAD' -Encoding ascii
           Set-Content -LiteralPath installer-tests\new\payload\DeckReady.exe -Value 'NEW-DECKREADY-PAYLOAD' -Encoding ascii
+          New-Item -ItemType Directory -Force installer-tests\new\Assets | Out-Null
+          Add-Type -AssemblyName System.Drawing
+          $dialog = New-Object System.Drawing.Bitmap 493,312
+          $g1 = [System.Drawing.Graphics]::FromImage($dialog)
+          $g1.Clear([System.Drawing.Color]::White)
+          $g1.Dispose()
+          $dialog.Save((Join-Path $pwd 'installer-tests\new\Assets\InstallerDialog.png'), [System.Drawing.Imaging.ImageFormat]::Png)
+          $dialog.Dispose()
+          $banner = New-Object System.Drawing.Bitmap 493,58
+          $g2 = [System.Drawing.Graphics]::FromImage($banner)
+          $g2.Clear([System.Drawing.Color]::White)
+          $g2.Dispose()
+          $banner.Save((Join-Path $pwd 'installer-tests\new\Assets\InstallerBanner.png'), [System.Drawing.Imaging.ImageFormat]::Png)
+          $banner.Dispose()
+          Set-Content -LiteralPath installer-tests\new\Assets\License.rtf -Value '{\rtf1\ansi DeckReady Alpha License}' -Encoding ascii
 
       - name: Build old MSI
         shell: pwsh
@@ -42,6 +57,21 @@ jobs:
           Write-Host "Old MSI: $($old.FullName)"
           Write-Host "New MSI: $($new.FullName)"
 
+      - name: Verify wizard UI tables
+        shell: pwsh
+        run: |
+          $installer = New-Object -ComObject WindowsInstaller.Installer
+          $db = $installer.OpenDatabase('${{ steps.locate.outputs.new }}', 0)
+          $view = $db.OpenView('SELECT `Dialog` FROM `Dialog`')
+          $view.Execute()
+          $dialogs = @()
+          while ($rec = $view.Fetch()) { $dialogs += $rec.StringData(1) }
+          $view.Close()
+          Write-Host "Dialogs: $($dialogs -join ', ')"
+          foreach ($required in @('WelcomeDlg','LicenseAgreementDlg','InstallDirDlg','VerifyReadyDlg','ProgressDlg','ExitDialog')) {
+            if ($dialogs -notcontains $required) { throw "Required setup dialog missing: $required" }
+          }
+
       - name: Install old MSI silently
         shell: pwsh
         run: |
@@ -52,7 +82,7 @@ jobs:
           if (-not (Test-Path $installed)) { throw "Old payload missing: $installed" }
           Write-Host (Get-Content $installed -Raw)
 
-      - name: Install new MSI over same version
+      - name: Install new MSI as upgrade
         shell: pwsh
         run: |
           $p = Start-Process msiexec.exe -ArgumentList @('/i', '${{ steps.locate.outputs.new }}', '/qn', '/norestart', '/L*V', "$pwd\new-install.log") -Wait -PassThru
@@ -77,6 +107,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: installer-validation-rev9-logs
+          name: installer-validation-rev10-logs
           path: |
             *.log
