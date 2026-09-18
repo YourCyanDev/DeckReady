@@ -38,7 +38,7 @@
       <ComponentGroupRef Id="ProductComponents" />
       <ComponentGroupRef Id="ShortcutComponents" />
     </Feature>
-    <Feature Id="DesktopShortcutFeature" Title="Desktop Shortcut" Description="Create a DeckReady shortcut on the desktop." Level="1" AllowAbsent="yes">
+    <Feature Id="DesktopShortcutFeature" Title="Desktop Shortcut" Description="Create a DeckReady shortcut on the desktop." Level="2" AllowAbsent="yes">
       <ComponentGroupRef Id="DesktopShortcutComponents" />
     </Feature>
   </Package>
