@@ -1,245 +1,368 @@
-# DeckReady
-Finally a better way to import and organize music! 
+# ✨ Features
 
-**Prepare your music. Import it. Get behind the decks.**
+## 🎵 Music Importing
 
-DeckReady is a desktop utility designed to make preparing and importing music into **Serato DJ** faster and easier.
+DeckReady supports multiple ways to bring music into your workflow.
 
-Instead of manually organizing downloaded tracks, moving files around, and managing Serato imports one by one, DeckReady provides a streamlined workflow for getting music ready for your library.
+You can import:
 
-> **Current platform:** macOS
-> **Windows support:** Planned
+* Individual tracks
+* Multiple tracks
+* Entire folders
+* ZIP archives containing music
+* Files through drag and drop
+* Files through the application menu
+* Music placed into DeckReady's watched import folder
 
 ---
 
-## About DeckReady
+## 🔄 Automatic Import Folder
 
-DeckReady was created to simplify the process of preparing music before using it in Serato.
+DeckReady includes a dedicated watched folder for new music.
+
+On macOS this may appear as:
+
+```text
+DeckReady Imports
+```
+
+On Windows the workflow uses the DeckReady import / Inbox folder.
+
+Save or move supported music into this folder and DeckReady can automatically detect and process it.
+
+This makes it useful with:
+
+* Browser downloads
+* Music download tools
+* Finder
+* File Explorer
+* Drag and drop
+* Other applications that can save files into a selected folder
 
 The goal is simple:
 
-**Download → Organize → Import → DJ**
-
-DeckReady handles the repetitive parts of that process while keeping the user in control of their music library.
+### Download → DeckReady → Serato
 
 ---
 
-## Features
+## 📁 Automatic Organization
 
-### Serato Integration
+DeckReady can organize imported music into its library using track information such as:
 
-Import prepared music into your Serato library without manually locating and moving every track.
+* Artist
+* Genre
+* Year
 
-DeckReady is designed to work alongside Serato's existing library structure rather than replace it.
+This helps reduce the amount of manual sorting required after downloading music.
 
-### Music Organization
+---
 
-Keep imported tracks organized and ready to use before opening Serato.
+## 📋 Copy or Move
 
-### Automatic File Handling
+Choose how DeckReady handles your original files.
 
-DeckReady can manage the source files after an import is completed.
+### Copy
 
-An optional setting can automatically delete the original source file after DeckReady has successfully processed it.
+Keeps the original file and creates an organized copy inside the DeckReady library.
 
-> Automatic deletion should only occur after the import has completed successfully.
+### Move
 
-### Serato Detection
+Moves the original file into the DeckReady library.
 
-DeckReady can detect when Serato is currently running.
+This allows DeckReady to work with both temporary download folders and existing music collections.
 
-Because changes made directly to Serato's library files may not immediately appear inside an already-running Serato session, DeckReady can warn the user when Serato needs to be restarted.
+---
 
-Users can choose to:
+## 🏷️ Metadata
+
+DeckReady can read track metadata and provides metadata editing tools for supported audio formats.
+
+Metadata may include:
+
+* Title
+* Artist
+* Album
+* Genre
+* Year
+
+Metadata support will continue to improve throughout Alpha development.
+
+---
+
+## 🔍 Duplicate Detection
+
+DeckReady can detect tracks that have already been imported.
+
+Duplicate detection helps prevent the same music from being added multiple times, even when files have been renamed or imported through different workflows.
+
+Detected duplicates can be separated from successful imports for review.
+
+---
+
+## 🕘 Recent Imports
+
+DeckReady keeps track of recently processed music so you can quickly review what has been added.
+
+Import history can persist between sessions.
+
+---
+
+## 🔎 Library Search
+
+Search your DeckReady music collection directly from inside the application instead of manually browsing through folders.
+
+---
+
+## 📦 ZIP Imports
+
+DeckReady can process music contained inside ZIP archives.
+
+The import workflow can:
+
+1. Extract supported music
+2. Read track information
+3. Check for duplicates
+4. Organize successful imports
+5. Prepare tracks for the DeckReady library
+
+---
+
+# 🎚️ Serato Integration
+
+DeckReady is built around a **Serato-ready workflow**.
+
+Current development includes support for:
+
+* Detecting Serato
+* Preparing music for Serato
+* Serato crate workflows
+* Handling library synchronization
+* Detecting when Serato must restart
+* Opening Serato after supported workflows
+* Backup-focused behavior before supported library changes
+
+---
+
+## 🔄 Waiting for Serato
+
+If Serato is already running when DeckReady needs to update library information, DeckReady can mark tracks as:
+
+### Waiting for Serato
+
+You may then be given options such as:
 
 * **Quit & Reopen Serato**
 * **Restart Later**
 
-This helps prevent confusion when newly imported tracks have been saved but are not yet visible inside Serato.
-
-### Import Safety
-
-DeckReady is being designed to avoid modifying Serato data unnecessarily and to reduce the chance of library corruption or incomplete imports.
-
-### Simple Desktop Interface
-
-DeckReady provides a dedicated graphical interface instead of requiring terminal commands or manual file editing.
+This helps avoid modifying library information while Serato is actively using it.
 
 ---
 
-## Planned Features
+# 🧹 Source Cleanup
 
-DeckReady is still under active development.
+DeckReady can optionally clean up source files after a successful import.
 
-Planned features include:
+Cleanup is designed to happen only after DeckReady confirms that the music was successfully processed or identified as a duplicate.
 
-* Windows support
-* `.pkg` installer for macOS
-* Windows installer / `.exe` release
-* Import history
-* Activity and diagnostic logs
-* Improved Serato library detection
-* Improved metadata handling
-* Additional file-management options
-* Better error recovery
-* Automatic update support
-* Expanded settings
+Additional safeguards are used to reduce the risk of accidentally deleting important library files.
+
+---
+
+# 💾 Persistent Settings
+
+DeckReady remembers application settings between sessions.
+
+Settings may include:
+
+* Library locations
+* Import behavior
+* Copy / Move preference
+* Organization settings
+* Source cleanup
+* Serato options
+* Application preferences
+
+---
+
+# 📜 Logging
+
+DeckReady includes logging and diagnostic tools to help troubleshoot issues during Alpha development.
+
+Logging can help identify problems involving:
+
+* Imports
+* Duplicate detection
+* Metadata
+* File movement
+* Automatic folder syncing
+* Serato synchronization
+* Application errors
+
+---
+
+# ❓ Help Menu
+
+Starting with **a1.07.0**, DeckReady includes quick-access links from inside the app.
+
+The Help menu includes:
+
+* **DeckReady on GitHub**
+* **DeckReady Discord**
+* **Report an Issue**
+
+---
+
+# 🍎 macOS
+
+DeckReady is actively developed for macOS.
+
+Current distribution:
+
+* `.dmg`
+
+Planned distribution:
+
+* `.pkg`
+
+The macOS version includes the same overall DeckReady workflow while using a native macOS interface and packaging system.
+
+---
+
+# 🪟 Windows
+
+DeckReady is actively developed for Windows using:
+
+* C#
+* .NET 8
+* WPF
+
+Planned Windows distribution includes:
+
+* `.exe`
+* `.msi`
+
+A full MSI installer is planned as DeckReady moves closer to leaving Alpha.
+
+---
+
+# 📥 Downloads
+
+DeckReady builds are available from the GitHub Releases page:
+
+[https://github.com/YourCyanDev/DeckReady/releases](https://github.com/YourCyanDev/DeckReady/releases)
+
+Because DeckReady is still in Alpha, releases should currently be treated as testing builds.
+
+---
+
+# 🔜 Planned Improvements
+
+DeckReady development is ongoing.
+
+Future releases are expected to include improvements such as:
+
+* Expanded metadata editing
+* Improved Serato integration
+* Better Serato DJ Pro / Lite detection
 * More import customization
+* Improved duplicate handling
+* Better import progress information
+* Improved error messages
+* Expanded diagnostics and logging
+* UI improvements
+* Performance improvements
+* Reliability improvements
+* Automatic update support
+* macOS `.pkg` distribution
+* Windows `.exe` distribution
+* Windows `.msi` installer
 
 ---
 
-## Installation
+# 🐛 Bug Reports
 
-### macOS
+Found something broken?
 
-Prebuilt releases will eventually be available through the repository's **Releases** section.
+Report it here:
 
-For development builds, installation may currently require manually launching the application.
+[https://github.com/YourCyanDev/DeckReady/issues](https://github.com/YourCyanDev/DeckReady/issues)
 
-Because DeckReady may not currently be signed with an Apple Developer certificate, macOS may display a security warning when opening the application.
-
-If macOS blocks the application, you may need to allow it from:
-
-**System Settings → Privacy & Security**
-
-Only download DeckReady from the official repository.
-
----
-
-## Using DeckReady
-
-A typical DeckReady workflow looks like this:
-
-1. Download or locate the music you want to import.
-2. Open DeckReady.
-3. Select your tracks.
-4. Choose your import options.
-5. Import the music.
-6. DeckReady prepares the files for Serato.
-7. Restart Serato if DeckReady indicates that it is required.
-8. Open Serato and access your newly imported music.
-
----
-
-## Serato Must Sometimes Be Restarted
-
-Serato loads portions of its music library when the application starts.
-
-If DeckReady modifies library information while Serato is already running, Serato may continue displaying the older version of the library until it reloads.
-
-DeckReady may therefore display a warning similar to:
-
-> **Your changes were saved successfully, but Serato must restart before they will appear.**
-
-You can then choose to restart Serato immediately or restart it later.
-
----
-
-## Development Status
-
-DeckReady is currently under development and should be considered **pre-release software** until a stable version is published.
-
-Features, file formats, settings, and internal behavior may change between development versions.
-
-Back up important music and Serato library data before testing development builds.
-
----
-
-## Roadmap
-
-### macOS
-
-* [x] Initial DeckReady application
-* [x] Music import workflow
-* [x] Serato integration development
-* [x] Serato running detection
-* [x] Restart warning workflow
-* [ ] Stable macOS release
-* [ ] Packaged `.pkg` installer
-* [x] Import history
-* [ ] Built-in logging system
-* [ ] Automatic update system
-
-### Windows
-
-* [ ] Windows port
-* [ ] Windows Serato library integration
-* [ ] Windows testing
-* [ ] `.exe` / installer release
-
-### Distribution
-
-* [ ] Stable GitHub release
-* [x] Release notes
-* [x] Downloadable builds
-* [x] Versioned releases
-
----
-
-## Building From Source
-
-Build instructions will be expanded as DeckReady approaches its first stable public release.
-
-Developers who clone the repository should use the dependencies and development environment specified by the project files included in the repository.
-
-```bash
-git clone <DECKREADY_REPOSITORY_URL>
-cd DeckReady
-```
-
-Additional setup instructions will be added as the build process is finalized.
-
----
-
-## Reporting Bugs
-
-If you discover a problem with DeckReady, please open a GitHub Issue.
-
-When reporting a bug, include:
+A useful bug report should include:
 
 * DeckReady version
-* macOS or Windows version
+* Operating system version
 * Serato version
 * What you were trying to do
-* What happened
+* Steps to reproduce the issue
 * What you expected to happen
-* Any relevant DeckReady logs
-* Screenshots of the error, if applicable
+* What actually happened
+* Screenshots when relevant
+* Logs when relevant
 
-Please avoid including private information or copyrighted music files in public bug reports.
-
----
-
-## Contributing
-
-DeckReady is currently being actively developed.
-
-Contribution guidelines will be expanded as the project becomes more stable.
-
-Bug reports, testing feedback, and reproducible issue reports are especially useful during development.
+Please do not upload copyrighted music files to public GitHub issues.
 
 ---
 
-## Disclaimer
+# 💡 Feature Requests
+
+Feature suggestions are welcome while DeckReady is in Alpha.
+
+When submitting an idea, explain:
+
+* What you want DeckReady to do
+* How you currently handle the task
+* How the feature would improve your workflow
+
+---
+
+# 🔗 Links
+
+### GitHub
+
+[https://github.com/YourCyanDev/DeckReady](https://github.com/YourCyanDev/DeckReady)
+
+### Discord
+
+[https://discord.gg/BuVnCQ5fG9](https://discord.gg/BuVnCQ5fG9)
+
+### Report an Issue
+
+[https://github.com/YourCyanDev/DeckReady/issues](https://github.com/YourCyanDev/DeckReady/issues)
+
+---
+
+# ⚠️ Alpha Notice
+
+DeckReady is early-development software.
+
+You may encounter:
+
+* Bugs
+* Incomplete features
+* Metadata edge cases
+* Import failures
+* Serato synchronization issues
+* UI inconsistencies
+* Features that change between builds
+
+Maintain backups of important music and Serato library data while using Alpha builds.
+
+---
+
+# Disclaimer
 
 DeckReady is an independent project and is **not affiliated with, endorsed by, sponsored by, or officially associated with Serato Limited**.
 
-**Serato** and **Serato DJ** are trademarks of their respective owners.
+Serato and Serato DJ are trademarks of their respective owners.
 
-DeckReady interacts with files used by DJ software. Although the project is designed with data safety in mind, you should maintain backups of important music libraries and Serato data, especially when using development or pre-release versions.
+DeckReady interacts with music files and DJ library information. Although safeguards and backup features are being developed, Alpha software can contain bugs.
 
-Use DeckReady at your own risk.
-
----
-
-## License
-
-The license for DeckReady will be specified in the repository's `LICENSE` file.
+Use development builds with appropriate backups.
 
 ---
 
-## DeckReady
+# 🎶 DeckReady
 
-**Less file management. More time behind the decks.**
+## Organize › Prepare › Play
 
-**Join the community, https://discord.gg/BuVnCQ5fG9**
+### Your music. Serato ready.
