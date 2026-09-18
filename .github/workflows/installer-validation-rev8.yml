@@ -1,9 +1,9 @@
-name: Installer validation rev10
+name: Installer validation rev11
 
 on:
   push:
     branches:
-      - installer-validation-rev10
+      - installer-validation-rev11
   workflow_dispatch:
 
 jobs:
@@ -68,9 +68,20 @@ jobs:
           while ($rec = $view.Fetch()) { $dialogs += $rec.StringData(1) }
           $view.Close()
           Write-Host "Dialogs: $($dialogs -join ', ')"
-          foreach ($required in @('WelcomeDlg','LicenseAgreementDlg','InstallDirDlg','VerifyReadyDlg','ProgressDlg','ExitDialog')) {
+          foreach ($required in @('WelcomeDlg','LicenseAgreementDlg','InstallDirDlg','DesktopShortcutDlg','VerifyReadyDlg','ProgressDlg','ExitDialog')) {
             if ($dialogs -notcontains $required) { throw "Required setup dialog missing: $required" }
           }
+
+          $cv = $db.OpenView("SELECT `Dialog_`, `Control`, `Event`, `Argument`, `Condition` FROM `ControlEvent` WHERE `Dialog_`='DesktopShortcutDlg'")
+          $cv.Execute()
+          $rows = @()
+          while ($rec = $cv.Fetch()) {
+            $rows += "$($rec.StringData(2))|$($rec.StringData(3))|$($rec.StringData(4))|$($rec.StringData(5))"
+          }
+          $cv.Close()
+          Write-Host "DesktopShortcutDlg events: $($rows -join '; ')"
+          if (-not ($rows | Where-Object { $_ -like 'Next|AddLocal|DesktopShortcutFeature*' })) { throw 'AddLocal event for desktop feature missing' }
+          if (-not ($rows | Where-Object { $_ -like 'Next|Remove|DesktopShortcutFeature*' })) { throw 'Remove event for desktop feature missing' }
 
       - name: Install old MSI silently
         shell: pwsh
@@ -94,6 +105,27 @@ jobs:
           Write-Host "Installed content: $content"
           if ($content -notmatch 'NEW-DECKREADY-PAYLOAD') { throw 'New MSI did not replace old payload' }
 
+      - name: Test desktop shortcut feature off
+        shell: pwsh
+        run: |
+          $p = Start-Process msiexec.exe -ArgumentList @('/i', '${{ steps.locate.outputs.new }}', 'ADDLOCAL=MainFeature', '/qn', '/norestart', '/L*V', "$pwd\\shortcut-off.log") -Wait -PassThru
+          if ($p.ExitCode -ne 0) { Get-Content "$pwd\\shortcut-off.log" -Tail 160; exit $p.ExitCode }
+          $shortcut = Join-Path $env:PUBLIC 'Desktop\\DeckReady.lnk'
+          if (Test-Path $shortcut) { throw "Desktop shortcut exists even though feature was not selected: $shortcut" }
+          $p2 = Start-Process msiexec.exe -ArgumentList @('/x', '${{ steps.locate.outputs.new }}', '/qn', '/norestart') -Wait -PassThru
+          if ($p2.ExitCode -ne 0) { exit $p2.ExitCode }
+
+      - name: Test desktop shortcut feature on
+        shell: pwsh
+        run: |
+          $p = Start-Process msiexec.exe -ArgumentList @('/i', '${{ steps.locate.outputs.new }}', 'ADDLOCAL=MainFeature,DesktopShortcutFeature', '/qn', '/norestart', '/L*V', "$pwd\\shortcut-on.log") -Wait -PassThru
+          if ($p.ExitCode -ne 0) { Get-Content "$pwd\\shortcut-on.log" -Tail 160; exit $p.ExitCode }
+          $shortcut = Join-Path $env:PUBLIC 'Desktop\\DeckReady.lnk'
+          if (-not (Test-Path $shortcut)) { throw "Desktop shortcut was not created: $shortcut" }
+          $p2 = Start-Process msiexec.exe -ArgumentList @('/x', '${{ steps.locate.outputs.new }}', '/qn', '/norestart') -Wait -PassThru
+          if ($p2.ExitCode -ne 0) { exit $p2.ExitCode }
+          if (Test-Path $shortcut) { throw "Desktop shortcut still exists after uninstall: $shortcut" }
+
       - name: Uninstall new MSI silently
         shell: pwsh
         run: |
@@ -107,6 +139,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: installer-validation-rev10-logs
+          name: installer-validation-rev11-logs
           path: |
             *.log
