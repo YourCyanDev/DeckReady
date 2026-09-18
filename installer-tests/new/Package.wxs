@@ -1,0 +1,25 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Id="YourCyanDev.DeckReady" Name="DeckReady" Manufacturer="YourCyanDev" Version="1.7.0" Scope="perMachine">
+    <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A newer version of DeckReady is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="DeckReady" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Component Id="DeckReadyExecutable" Guid="*">
+        <File Id="DeckReadyExe" Source="payload\DeckReady.exe" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+    <ComponentGroup Id="ShortcutComponents" Directory="ProgramMenuFolder">
+      <Component Id="DeckReadyStartMenuShortcutComponent" Guid="*">
+        <Shortcut Id="DeckReadyStartMenuShortcut" Name="DeckReady" Description="DeckReady" Target="[INSTALLFOLDER]DeckReady.exe" WorkingDirectory="INSTALLFOLDER" Advertise="no" />
+        <RegistryValue Root="HKCU" Key="Software\YourCyanDev\DeckReady" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+    <Feature Id="MainFeature" Title="DeckReady" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+      <ComponentGroupRef Id="ShortcutComponents" />
+    </Feature>
+  </Package>
+</Wix>
