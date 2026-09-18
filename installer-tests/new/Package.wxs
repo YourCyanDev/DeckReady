@@ -27,7 +27,7 @@
       </Component>
     </ComponentGroup>
 
-    <ComponentGroup Id="DesktopShortcutComponents" Directory="CommonDesktopFolder">
+    <ComponentGroup Id="DesktopShortcutComponents" Directory="DesktopFolder">
       <Component Id="DeckReadyDesktopShortcutComponent" Guid="*">
         <Shortcut Id="DeckReadyDesktopShortcut" Name="DeckReady" Description="DeckReady" Target="[INSTALLFOLDER]DeckReady.exe" WorkingDirectory="INSTALLFOLDER" Advertise="no" />
         <RegistryValue Root="HKLM" Key="Software\YourCyanDev\DeckReady" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes" />
