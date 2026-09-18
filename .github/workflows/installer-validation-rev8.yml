@@ -72,7 +72,7 @@ jobs:
             if ($dialogs -notcontains $required) { throw "Required setup dialog missing: $required" }
           }
 
-          $cv = $db.OpenView("SELECT `Dialog_`, `Control`, `Event`, `Argument`, `Condition` FROM `ControlEvent` WHERE `Dialog_`='DesktopShortcutDlg'")
+          $cv = $db.OpenView("SELECT `Dialog_`, `Control_`, `Event`, `Argument`, `Condition` FROM `ControlEvent` WHERE `Dialog_`='DesktopShortcutDlg'")
           $cv.Execute()
           $rows = @()
           while ($rec = $cv.Fetch()) {
