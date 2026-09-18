@@ -1,9 +1,9 @@
-name: Installer validation rev8
+name: Installer validation rev9
 
 on:
   push:
     branches:
-      - installer-validation-rev8
+      - installer-validation-rev9
   workflow_dispatch:
 
 jobs:
@@ -77,6 +77,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: installer-validation-rev8-logs
+          name: installer-validation-rev9-logs
           path: |
             *.log
