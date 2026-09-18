@@ -1,7 +1,7 @@
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-  <Package Id="YourCyanDev.DeckReady" Name="DeckReady" Manufacturer="YourCyanDev" Version="1.7.9" Scope="perMachine">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"\n     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package Id="YourCyanDev.DeckReady" Name="DeckReady" Manufacturer="YourCyanDev" Version="1.7.10" Scope="perMachine">
     <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A newer version of DeckReady is already installed." />
-    <MediaTemplate EmbedCab="yes" />
+    <MediaTemplate EmbedCab="yes" />\n    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />\n    <WixVariable Id="WixUIDialogBmp" Value="Assets\\InstallerDialog.png" />\n    <WixVariable Id="WixUIBannerBmp" Value="Assets\\InstallerBanner.png" />\n    <WixVariable Id="WixUILicenseRtf" Value="Assets\\License.rtf" />
     <StandardDirectory Id="ProgramFiles6432Folder">
       <Directory Id="INSTALLFOLDER" Name="DeckReady" />
     </StandardDirectory>
