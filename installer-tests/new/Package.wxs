@@ -1,5 +1,5 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-  <Package Id="YourCyanDev.DeckReady" Name="DeckReady" Manufacturer="YourCyanDev" Version="1.7.0" Scope="perMachine">
+  <Package Id="YourCyanDev.DeckReady" Name="DeckReady" Manufacturer="YourCyanDev" Version="1.7.9" Scope="perMachine">
     <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A newer version of DeckReady is already installed." />
     <MediaTemplate EmbedCab="yes" />
     <StandardDirectory Id="ProgramFiles6432Folder">
