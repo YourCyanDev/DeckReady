@@ -6,7 +6,7 @@
       <Directory Id="INSTALLFOLDER" Name="DeckReady" />
     </StandardDirectory>
     <StandardDirectory Id="ProgramMenuFolder" />
-    <StandardDirectory Id="CommonDesktopFolder" />
+    <StandardDirectory Id="DesktopFolder" />
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
     <Property Id="CREATE_DESKTOP_SHORTCUT" Value="1" Secure="yes" />
     <UIRef Id="DeckReadyUI_InstallDir" />
