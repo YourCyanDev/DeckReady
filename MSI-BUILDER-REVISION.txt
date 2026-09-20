@@ -1,0 +1,2 @@
+DeckReady Windows a1.08.0
+MSI Builder Revision 13
