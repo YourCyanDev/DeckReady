@@ -1,0 +1,97 @@
+name: Build Windows Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    name: Build EXE + MSI
+    runs-on: windows-2022
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout DeckReady
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore Windows project
+        shell: pwsh
+        run: dotnet restore .\DeckReady.Windows.sln
+
+      - name: Publish self-contained Windows EXE
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force .\release\win-x64 -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force .\release\win-x64 | Out-Null
+
+          dotnet publish .\src\DeckReady.Windows\DeckReady.Windows.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:DebugType=None `
+            -p:DebugSymbols=false `
+            -o .\release\win-x64
+
+          if (-not (Test-Path .\release\win-x64\DeckReady.exe)) {
+            throw "DeckReady.exe was not produced."
+          }
+
+      - name: Stage MSI payload
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force .\installer\payload -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force .\installer\payload | Out-Null
+          Copy-Item .\release\win-x64\DeckReady.exe .\installer\payload\DeckReady.exe -Force
+
+      - name: Build WiX MSI
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force .\release\msi -ErrorAction SilentlyContinue
+          Remove-Item -Recurse -Force .\installer\bin -ErrorAction SilentlyContinue
+          Remove-Item -Recurse -Force .\installer\obj -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force .\release\msi | Out-Null
+
+          dotnet build .\installer\DeckReady.Installer.wixproj `
+            -c Release `
+            --nologo `
+            -p:Version=1.8.0 `
+            -p:PackageVersion=1.8.0 `
+            -p:DeckReadyReleaseLabel=a1.08.0
+
+          $msi = ".\release\msi\DeckReady-Windows-a1.08.0.msi"
+          if (-not (Test-Path $msi)) {
+            throw "DeckReady MSI was not produced at $msi"
+          }
+
+      - name: Verify MSI cabinet
+        shell: powershell
+        run: |
+          .\installer\Verify-Msi.ps1 -MsiPath ".\release\msi\DeckReady-Windows-a1.08.0.msi"
+
+      - name: Prepare downloadable release files
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force .\cloud-release -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force .\cloud-release | Out-Null
+
+          Copy-Item .\release\win-x64\DeckReady.exe .\cloud-release\DeckReady-Windows-a1.08.0.exe
+          Copy-Item .\release\msi\DeckReady-Windows-a1.08.0.msi .\cloud-release\DeckReady-Windows-a1.08.0.msi
+
+          Get-ChildItem .\cloud-release | Format-Table Name, Length
+
+      - name: Upload Windows release
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeckReady-Windows-a1.08.0
+          path: cloud-release/*
+          if-no-files-found: error
+          retention-days: 30
