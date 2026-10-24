@@ -157,6 +157,7 @@
 				"CLANG_ENABLE_MODULES" = "YES";
 				"ENABLE_TESTABILITY" = "YES";
 				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"ONLY_ACTIVE_ARCH" = "YES";
 			};
 		};
 		"E6DE6C99132752C914FEF632" = {
@@ -197,6 +198,7 @@
 				"CODE_SIGN_STYLE" = "Automatic";
 				"SWIFT_EMIT_LOC_STRINGS" = "YES";
 				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"ONLY_ACTIVE_ARCH" = "YES";
 			};
 		};
 		"639A7CA24D39909E713B47F7" = {
@@ -239,6 +241,7 @@
 				"TARGETED_DEVICE_FAMILY" = "1,2";
 				"CODE_SIGN_STYLE" = "Automatic";
 				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"ONLY_ACTIVE_ARCH" = "YES";
 			};
 		};
 		"942EEBBACD6C88CAE7F29B29" = {

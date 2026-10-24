@@ -30,7 +30,7 @@ testframeworks=obj('testframeworks','PBXFrameworksBuildPhase',buildActionMask=21
 def configs(key,settings):
  configs=[]
  for name in ['Debug','Release']:
-  more={'SWIFT_OPTIMIZATION_LEVEL':'-Onone'} if name=='Debug' else {'SWIFT_COMPILATION_MODE':'wholemodule','SWIFT_OPTIMIZATION_LEVEL':'-O'}
+  more={'SWIFT_OPTIMIZATION_LEVEL':'-Onone','ONLY_ACTIVE_ARCH':'YES'} if name=='Debug' else {'SWIFT_COMPILATION_MODE':'wholemodule','SWIFT_OPTIMIZATION_LEVEL':'-O'}
   configs.append(obj(key+name,'XCBuildConfiguration',name=name,buildSettings={**settings,**more}))
  return obj(key+'list','XCConfigurationList',buildConfigurations=configs,defaultConfigurationIsVisible=0,defaultConfigurationName='Release')
 projectconfigs=configs('project',{'IPHONEOS_DEPLOYMENT_TARGET':'17.0','SDKROOT':'iphoneos','SWIFT_VERSION':'5.0','CLANG_ENABLE_MODULES':'YES','ENABLE_TESTABILITY':'YES'})
