@@ -366,3 +366,7 @@ Use development builds with appropriate backups.
 ## Organize › Prepare › Play
 
 ### Your music. Serato ready.
+
+## iPhone and iPad alpha
+
+The SwiftUI iOS app lives in [`ios/`](ios/README.md). Open `ios/DeckReady.xcodeproj` on a Mac to develop and test local imports, previews, crates and Files export for Serato DJ for iOS. This is an early source alpha and requires simulator and physical-device validation before release.
