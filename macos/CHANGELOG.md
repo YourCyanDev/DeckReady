@@ -1,3 +1,10 @@
+# DMG packaging fix for a1.09.2
+
+- Embed the branded background and saved Finder layout in local and CI builds.
+- Keep DeckReady on the left and Applications on the right at the intended background positions.
+- Verify the final DMG background alias and unchanged layout after two read-only mounts at different locations.
+- App version remains a1.09.2; this changes packaging only.
+
 # macOS a1.09.2
 
 - Added Year → Artist and Genre → Artist with songs inside artist subcrates.

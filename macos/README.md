@@ -1,3 +1,7 @@
+## Persistent DMG background fix
+
+The local builder and CI use the same DMG packager. It embeds the branded PNG and writes Finder's .DS_Store directly, with a background alias targeting the image's own volume. The final compressed DMG is mounted read-only twice at different paths to verify the background and saved icon positions survive reopening. No Finder automation is needed. Packaging requires Python 3.9+; dependencies are installed in a private build-cache environment on first use.
+
 # DeckReady macOS a1.09.2
 
 In Settings → Music Library → Organize by, select **Year → Artist (songs inside)** or **Genre → Artist (songs inside)**. Use **Add more** to enable both. The first option controls file storage; every selected crate structure references the same stored audio file. Missing required tags go to **need tag editing**. Existing files are not relocated, and existing crate tracks are retained.
