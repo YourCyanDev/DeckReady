@@ -61,6 +61,23 @@ DeckReady is in alpha. Features and packaging can differ between platforms and b
 - Use logs to troubleshoot imports, metadata, file movement, watched folders, Serato synchronization, and application errors.
 - Open GitHub, Discord, and issue reporting from the Help menu, available since a1.07.0.
 
+### Nested artist crates (upcoming Windows version)
+
+In **Settings → Import Behavior → Organize by**, choose **Year → Artist (songs inside)**.
+New files are stored as `Library/2026/Yo DJ Hill/song.mp3`. With Serato sync enabled,
+DeckReady creates a **2026** crate and a **Yo DJ Hill** subcrate containing the tracks.
+Songs are tracks, not another crate level. This mode uses year/artist names instead of
+the single crate-name setting. Tracks missing either a year or artist go only to the **need tag editing** crate.
+Their storage folders use **Unknown Year** / **Unknown Artist** until tags are filled in.
+Choose **Genre → Artist (songs inside)** for a genre crate with artist subcrates,
+such as **Hip-Hop → Yo DJ Hill**, and matching `Library/Hip-Hop/Yo DJ Hill/` folders.
+Missing genre or artist tags send tracks to **need tag editing** in that mode.
+Use **Add more** to enable both structures together; **Remove** deletes an extra option.
+The first option controls storage folders. Each selected crate structure references the same
+stored audio, so songs are not copied twice. A track with an incomplete tag in either selected
+structure also appears in **need tag editing**. Duplicate selections are blocked when saving.
+Existing files are not reorganized; existing crate contents are retained.
+
 ## Downloads
 
 Get testing builds from **[GitHub Releases](https://github.com/YourCyanDev/DeckReady/releases)**. Open the release for your platform and choose its download under **Assets**.

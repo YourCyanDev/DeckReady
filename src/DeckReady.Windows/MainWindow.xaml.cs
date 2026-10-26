@@ -329,19 +329,34 @@ public partial class MainWindow : Window
     {
         try
         {
-            var result = await Task.Run(() => _serato.SyncCrate(paths, _settings.SeratoCrateName));
+            // Snapshot edited metadata on the UI thread, including deferred/retried imports.
+            var mode = _settings.OrganizationMode;
+            var modes = new[] { mode }.Concat(_settings.AdditionalOrganizationModes ?? new()).Distinct().ToArray();
+            var needsTags = modes.Any(x => x is OrganizationMode.YearArtist or OrganizationMode.GenreArtist);
+            var crateName = _settings.SeratoCrateName;
+            var metadata = QueueItems.Where(x => x.DestinationPath is not null)
+                .GroupBy(x => x.DestinationPath!, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(x => x.Key, x => x.First().Metadata.Clone(), StringComparer.OrdinalIgnoreCase);
+            await Task.Run(() =>
+            {
+                var tracks = paths.Select(path => (Path: path, Metadata:
+                    !needsTags ? new TrackMetadata() :
+                    metadata.TryGetValue(path, out var tags) ? tags : _metadata.Read(path))).ToList();
+                _serato.SyncOrganizedCrates(tracks, modes, crateName);
+            });
+            var syncTarget = needsTags ? "selected crates (including need tag editing when needed)" : crateName;
             _historyStore.UpdateSeratoSynced(paths);
 
             foreach (var item in QueueItems.Where(x => x.DestinationPath is not null && paths.Contains(x.DestinationPath, StringComparer.OrdinalIgnoreCase)))
             {
                 if (item.State == ImportState.WaitingForSerato)
                     item.State = item.WasDuplicate ? ImportState.Duplicate : ImportState.Imported;
-                item.StatusMessage = $"Synced to {_settings.SeratoCrateName}";
+                item.StatusMessage = $"Synced to {syncTarget}";
             }
 
             var reopened = !reopen || _serato.Launch(_settings.PreferredSeratoApp);
             MessageBox.Show(this,
-                $"{paths.Count} track{(paths.Count == 1 ? "" : "s")} synced to “{_settings.SeratoCrateName}”."
+                $"{paths.Count} track{(paths.Count == 1 ? "" : "s")} synced to “{syncTarget}”."
                 + (reopen ? $"\n\nSerato {(reopened ? "was reopened." : "could not be reopened automatically.")}" : ""),
                 "Serato Import Complete", MessageBoxButton.OK, MessageBoxImage.Information);
 

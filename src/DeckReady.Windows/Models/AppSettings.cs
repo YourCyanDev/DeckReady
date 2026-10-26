@@ -11,7 +11,9 @@ public enum OrganizationMode
     NoSubfolders,
     Artist,
     Genre,
-    Year
+    Year,
+    YearArtist,
+    GenreArtist
 }
 
 public enum SeratoAppPreference
@@ -29,6 +31,7 @@ public sealed class AppSettings
     public string LibraryFolder { get; set; } = DefaultLibraryFolder;
     public ImportMode ImportMode { get; set; } = ImportMode.Copy;
     public OrganizationMode OrganizationMode { get; set; } = OrganizationMode.NoSubfolders;
+    public List<OrganizationMode> AdditionalOrganizationModes { get; set; } = new();
     public bool AutomaticSeratoImport { get; set; } = true;
     public bool LaunchSeratoWhenNeeded { get; set; } = true;
     public SeratoAppPreference PreferredSeratoApp { get; set; } = SeratoAppPreference.Pro;

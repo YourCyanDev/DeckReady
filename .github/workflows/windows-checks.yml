@@ -1,0 +1,21 @@
+name: Windows checks
+on:
+  pull_request:
+    paths: ['src/**', 'tests/**', '.github/workflows/windows-checks.yml']
+  push:
+    branches: ['feature/year-artist-crates']
+permissions:
+  contents: read
+jobs:
+  build-and-test:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Build Windows app
+        run: dotnet build src/DeckReady.Windows/DeckReady.Windows.csproj -c Release
+      - name: Test organization and import regressions
+        run: dotnet run --project tests/DeckReady.Organization.Tests/DeckReady.Organization.Tests.csproj -c Release

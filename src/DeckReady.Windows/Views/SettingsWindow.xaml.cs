@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using DeckReady.Models;
 using DeckReady.Services;
 using Microsoft.Win32;
@@ -9,6 +10,17 @@ public partial class SettingsWindow : Window
 {
     private readonly AppSettings _settings;
     private readonly SeratoService _serato;
+    private readonly List<ComboBox> _additionalOrganizationBoxes = new();
+    private sealed record OrganizationOption(OrganizationMode Mode, string Label);
+    private static readonly OrganizationOption[] OrganizationOptions =
+    {
+        new(OrganizationMode.NoSubfolders, "No subfolders"),
+        new(OrganizationMode.Artist, "Artist"),
+        new(OrganizationMode.Genre, "Genre"),
+        new(OrganizationMode.Year, "Year"),
+        new(OrganizationMode.YearArtist, "Year → Artist (songs inside)"),
+        new(OrganizationMode.GenreArtist, "Genre → Artist (songs inside)")
+    };
 
     public SettingsWindow(AppSettings settings, SeratoService serato)
     {
@@ -22,8 +34,17 @@ public partial class SettingsWindow : Window
         ClearAutoImportCheck.IsChecked = settings.ClearAutoImportFolderAfterImport;
         ImportModeBox.ItemsSource = Enum.GetValues<ImportMode>();
         ImportModeBox.SelectedItem = settings.ImportMode;
-        OrganizationBox.ItemsSource = Enum.GetValues<OrganizationMode>();
-        OrganizationBox.SelectedItem = settings.OrganizationMode;
+        OrganizationBox.ItemsSource = OrganizationOptions;
+        OrganizationBox.DisplayMemberPath = "Label";
+        OrganizationBox.SelectedValuePath = "Mode";
+        OrganizationBox.SelectedValue = settings.OrganizationMode;
+        foreach (var mode in settings.AdditionalOrganizationModes ?? new())
+            if (mode != settings.OrganizationMode &&
+                mode is OrganizationMode.YearArtist or OrganizationMode.GenreArtist &&
+                !_additionalOrganizationBoxes.Any(x => Equals(x.SelectedValue, mode)))
+                AddOrganizationRow(mode);
+        OrganizationBox.SelectionChanged += (_, _) => RefreshAddOrganizationButton();
+        RefreshAddOrganizationButton();
         WriteTagsCheck.IsChecked = settings.WriteMetadataToFiles;
         DeleteContainerCheck.IsChecked = settings.DeleteSourceContainerAfterImport;
         AutoSeratoCheck.IsChecked = settings.AutomaticSeratoImport;
@@ -33,6 +54,50 @@ public partial class SettingsWindow : Window
         LaunchSeratoCheck.IsChecked = settings.LaunchSeratoWhenNeeded;
         CrateNameBox.Text = settings.SeratoCrateName;
         RefreshSeratoControls();
+    }
+
+    private IEnumerable<OrganizationMode> SelectedOrganizationModes() =>
+        new[] { (OrganizationMode)(OrganizationBox.SelectedValue ?? OrganizationMode.NoSubfolders) }
+            .Concat(_additionalOrganizationBoxes.Select(x =>
+                (OrganizationMode)(x.SelectedValue ?? OrganizationMode.YearArtist)));
+
+    private void AddOrganization_Click(object sender, RoutedEventArgs e)
+    {
+        var selected = SelectedOrganizationModes().ToHashSet();
+        var next = OrganizationOptions.FirstOrDefault(x =>
+            x.Mode is OrganizationMode.YearArtist or OrganizationMode.GenreArtist && !selected.Contains(x.Mode));
+        if (next is not null) AddOrganizationRow(next.Mode);
+        RefreshAddOrganizationButton();
+    }
+
+    private void AddOrganizationRow(OrganizationMode mode)
+    {
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(170, 0, 0, 8) };
+        var box = new ComboBox
+        {
+            Width = 260, ItemsSource = OrganizationOptions.Where(x =>
+                x.Mode is OrganizationMode.YearArtist or OrganizationMode.GenreArtist).ToArray(),
+            DisplayMemberPath = "Label", SelectedValuePath = "Mode", SelectedValue = mode
+        };
+        var remove = new Button { Content = "Remove", Margin = new Thickness(8, 0, 0, 0) };
+        remove.Click += (_, _) =>
+        {
+            _additionalOrganizationBoxes.Remove(box);
+            AdditionalOrganizationRows.Children.Remove(row);
+            RefreshAddOrganizationButton();
+        };
+        box.SelectionChanged += (_, _) => RefreshAddOrganizationButton();
+        row.Children.Add(box);
+        row.Children.Add(remove);
+        _additionalOrganizationBoxes.Add(box);
+        AdditionalOrganizationRows.Children.Add(row);
+    }
+
+    private void RefreshAddOrganizationButton()
+    {
+        var selected = SelectedOrganizationModes().ToHashSet();
+        AddOrganizationButton.IsEnabled = _additionalOrganizationBoxes.Count < 2 &&
+            new[] { OrganizationMode.YearArtist, OrganizationMode.GenreArtist }.Any(x => !selected.Contains(x));
     }
 
     private void BrowseLibrary_Click(object sender, RoutedEventArgs e)
@@ -119,12 +184,21 @@ public partial class SettingsWindow : Window
             return;
         }
 
+        var modes = SelectedOrganizationModes().ToList();
+        if (modes.Distinct().Count() != modes.Count)
+        {
+            MessageBox.Show(this, "Choose each organization option only once, or remove the duplicate row.",
+                "Duplicate Organization", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
         _settings.LibraryFolder = library;
         _settings.AutoImportFolder = inbox;
         _settings.AutoImportEnabled = AutoImportEnabledCheck.IsChecked == true;
         _settings.ClearAutoImportFolderAfterImport = ClearAutoImportCheck.IsChecked == true;
         _settings.ImportMode = (ImportMode)(ImportModeBox.SelectedItem ?? ImportMode.Copy);
-        _settings.OrganizationMode = (OrganizationMode)(OrganizationBox.SelectedItem ?? OrganizationMode.NoSubfolders);
+        _settings.OrganizationMode = (OrganizationMode)(OrganizationBox.SelectedValue ?? OrganizationMode.NoSubfolders);
+        _settings.AdditionalOrganizationModes = modes.Skip(1).ToList();
         _settings.WriteMetadataToFiles = WriteTagsCheck.IsChecked == true;
         _settings.DeleteSourceContainerAfterImport = DeleteContainerCheck.IsChecked == true;
         _settings.AutomaticSeratoImport = AutoSeratoCheck.IsChecked == true;
