@@ -194,3 +194,81 @@ enum CrateOrganization {
         return result
     }
 }
+
+
+enum LibrarySort: String, CaseIterable, Identifiable {
+    case title = "Title", artist = "Artist", album = "Album", genre = "Genre"
+    case year = "Year", duration = "Duration", filename = "Filename"
+    var id: String { rawValue }
+}
+
+struct LibraryQuery {
+    var artist = "", genre = "", year = "", format = "", search = ""
+    var sort: LibrarySort = .title
+    var ascending = true
+    static func tag(_ value: String) -> String {
+        let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return value.isEmpty ? "Unknown" : value
+    }
+    func apply(to tracks: [LibraryTrack]) -> [LibraryTrack] {
+        let search = self.search.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return tracks.filter { track in
+            (artist.isEmpty || Self.tag(track.metadata.artist) == artist) &&
+            (genre.isEmpty || Self.tag(track.metadata.genre) == genre) &&
+            (year.isEmpty || Self.tag(track.metadata.year) == year) &&
+            (format.isEmpty || track.fileExtension == format) &&
+            (search.isEmpty || [track.displayTitle, track.displayArtist, track.metadata.album,
+                track.metadata.genre, track.metadata.year, track.fileURL.lastPathComponent]
+                .contains { $0.lowercased().contains(search) })
+        }.sorted { left, right in
+            var order: ComparisonResult
+            switch sort {
+            case .duration:
+                order = left.metadata.duration == right.metadata.duration ? .orderedSame :
+                    (left.metadata.duration < right.metadata.duration ? .orderedAscending : .orderedDescending)
+            case .year:
+                let a = Int(left.metadata.year) ?? 0, b = Int(right.metadata.year) ?? 0
+                order = a == b ? .orderedSame : (a < b ? .orderedAscending : .orderedDescending)
+            default:
+                func value(_ track: LibraryTrack) -> String {
+                    switch sort {
+                    case .title: return track.displayTitle
+                    case .artist: return track.displayArtist
+                    case .album: return track.metadata.album
+                    case .genre: return track.metadata.genre
+                    default: return track.fileURL.lastPathComponent
+                    }
+                }
+                order = value(left).localizedStandardCompare(value(right))
+            }
+            if order == .orderedSame { order = left.fileURL.path.localizedStandardCompare(right.fileURL.path) }
+            return ascending ? order == .orderedAscending : order == .orderedDescending
+        }
+    }
+}
+
+enum LibraryCrateScan {
+    static func discover(in root: URL) throws -> [URL] {
+        let keys: [URLResourceKey] = [.isRegularFileKey, .isSymbolicLinkKey]
+        guard try root.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true else {
+            throw CocoaError(.fileReadNoSuchFile)
+        }
+        let formats: Set<String> = ["mp3", "m4a", "wav", "wave", "aiff", "aif", "flac", "aac"]
+        var failure: Error?
+        guard let enumerator = FileManager.default.enumerator(at: root, includingPropertiesForKeys: keys,
+            options: [.skipsHiddenFiles, .skipsPackageDescendants], errorHandler: { _, error in
+                failure = error
+                return false
+            }) else { throw CocoaError(.fileReadUnknown) }
+        var urls: Set<URL> = []
+        for case let url as URL in enumerator {
+            let values = try url.resourceValues(forKeys: Set(keys))
+            if values.isSymbolicLink == true { enumerator.skipDescendants(); continue }
+            if values.isRegularFile == true && formats.contains(url.pathExtension.lowercased()) {
+                urls.insert(url.standardizedFileURL)
+            }
+        }
+        if let failure { throw failure }
+        return urls.sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
+    }
+}

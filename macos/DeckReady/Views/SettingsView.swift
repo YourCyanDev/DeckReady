@@ -158,7 +158,7 @@ struct SettingsView: View {
             }
 
             Section("About") {
-                LabeledContent("Version", value: "Alpha a1.09.2")
+                LabeledContent("Version", value: "Alpha a1.10.0")
                 Text("Built for macOS Ventura 13+ and Xcode 15.2.")
                     .font(.caption)
                     .foregroundStyle(.secondary)

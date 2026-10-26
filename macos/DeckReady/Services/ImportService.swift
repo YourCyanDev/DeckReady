@@ -9,6 +9,7 @@ final class ImportService: ObservableObject {
     @Published var recentImports: [ImportHistoryRecord] = []
     @Published var duplicateHistory: [ImportHistoryRecord] = []
     @Published var isBusy = false
+    @Published var libraryOrganizationStatus = ""
     @Published var activityLog: [String] = []
     @Published var lastError: String?
     @Published var showSeratoRestartPrompt = false
@@ -42,6 +43,51 @@ final class ImportService: ObservableObject {
     func configure(settings: AppSettings, serato: SeratoService) {
         self.settings = settings
         self.serato = serato
+    }
+
+    func organizeLibrary() async {
+        guard !isBusy, let settings, let serato, let root = settings.libraryFolder else { return }
+        isBusy = true
+        libraryOrganizationStatus = "Finding library audio files…"
+        defer { isBusy = false; libraryOrganizationStatus = "" }
+        let modes = settings.activeOrganizationModes
+        let flatName = settings.normalizedSeratoCrateName
+        do {
+            let urls = try await Task.detached { try LibraryCrateScan.discover(in: root) }.value
+            guard !urls.isEmpty else { lastError = "No supported audio files were found in the Music Library folder."; return }
+            var tracks: [(url: URL, metadata: TrackMetadata)] = []
+            for (index, url) in urls.enumerated() {
+                if index % 25 == 0 { libraryOrganizationStatus = "Reading tags: \(index + 1) of \(urls.count)…" }
+                // Read actual files, regardless of DeckReady import history or active view filters.
+                tracks.append((url, await metadataService.metadata(for: url)))
+            }
+            let plan = CrateOrganization.plan(tracks, modes: modes, flatName: flatName)
+            let reviewCount = plan["need tag editing"]?.count ?? 0
+            let preview = NSAlert()
+            preview.messageText = "Organize Library"
+            preview.informativeText = "\(urls.count) songs in \(root.path) will be added to \(plan.count) crates.\n\nOrganize by: \(modes.map(\.rawValue).joined(separator: " + "))\nNeed tag editing: \(reviewCount)\n\nAudio files will stay in place. Existing crate tracks are retained. This processes the full folder, including songs DeckReady did not import."
+            preview.addButton(withTitle: "Update Crates")
+            preview.addButton(withTitle: "Cancel")
+            guard preview.runModal() == .alertFirstButtonReturn else { return }
+            serato.refreshStatus()
+            let wasRunning = serato.isRunning
+            if wasRunning {
+                let close = NSAlert()
+                close.messageText = "Close Serato to update crates"
+                close.informativeText = "DeckReady needs Serato closed while it updates the library crates."
+                close.addButton(withTitle: "Quit Serato & Organize")
+                close.addButton(withTitle: "Cancel")
+                guard close.runModal() == .alertFirstButtonReturn else { return }
+                guard await serato.quitAndWait() else { lastError = "Serato is still open. Close it and try Organize Library again."; return }
+            }
+            libraryOrganizationStatus = "Updating library crates…"
+            let count = try serato.syncOrganizedCrates(tracks, modes: modes, flatName: flatName)
+            markHistorySynced(urls)
+            log("Organized \(urls.count) existing library songs into \(count) crates without changing audio files.")
+            if wasRunning && settings.launchSeratoWhenNeeded { _ = await serato.launch(preferred: settings.preferredSeratoApp) }
+            seratoSyncSuccessMessage = "Organized \(urls.count) existing songs into \(count) crates. Audio files were left in place."
+            showSeratoSyncSuccessPrompt = true
+        } catch { lastError = "Could not organize the library: \(error.localizedDescription)" }
     }
 
     func add(urls: [URL]) {

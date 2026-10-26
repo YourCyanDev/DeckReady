@@ -42,6 +42,12 @@ struct ContentView: View {
     @State private var editingTarget: MetadataEditTarget?
     @State private var metadataDraft = TrackMetadata.empty
     @State private var searchText = ""
+    @State private var artistFilter = ""
+    @State private var genreFilter = ""
+    @State private var yearFilter = ""
+    @State private var formatFilter = ""
+    @AppStorage("musicLibrarySort") private var librarySort = LibrarySort.title.rawValue
+    @AppStorage("musicLibraryAscending") private var libraryAscending = true
     @State private var libraryTracks: [LibraryTrack] = []
     @State private var tagEditorSelection: String?
     @State private var tagEditorDraft = TrackMetadata.empty
@@ -61,6 +67,10 @@ struct ContentView: View {
             VStack(spacing: 0) {
                 toolbar
                 Divider()
+                if selectedSection == .musicLibrary || selectedSection == .tagEditor {
+                    libraryFilterBar
+                    Divider()
+                }
                 mainContent
                 if preview.currentURL != nil {
                     Divider()
@@ -94,7 +104,7 @@ struct ContentView: View {
                  ? "Your imported tracks have been saved in DeckReady, but Serato is still open. DeckReady can quit Serato, apply the pending crate changes, and reopen the Serato app that was already in use."
                  : "Your imported tracks have been saved in DeckReady, but Serato is still open. DeckReady can quit Serato and apply the pending crate changes without reopening it.")
         }
-        .alert("Serato Import Complete", isPresented: $importer.showSeratoSyncSuccessPrompt) {
+        .alert("Serato Update Complete", isPresented: $importer.showSeratoSyncSuccessPrompt) {
             Button("OK", role: .cancel) { importer.showSeratoSyncSuccessPrompt = false }
         } message: {
             Text(importer.seratoSyncSuccessMessage)
@@ -171,7 +181,7 @@ struct ContentView: View {
             }
 
             Section {
-                Text("DeckReady Alpha a1.09.2")
+                Text("DeckReady Alpha a1.10.0")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -226,6 +236,8 @@ struct ContentView: View {
                 Button("Clear Finished") { importer.clearCompleted() }
                     .disabled(!importer.items.contains(where: { [.imported, .duplicate, .failed].contains($0.state) }))
             case .musicLibrary:
+                Button("Organize Library") { Task { await importer.organizeLibrary() } }
+                    .disabled(importer.isBusy || isScanningLibrary || settings.libraryFolder == nil)
                 Button(isScanningLibrary ? "Scanning…" : "Refresh Library") { refreshMusicLibrary() }
                     .disabled(isScanningLibrary || settings.libraryFolder == nil)
             case .tagEditor:
@@ -877,14 +889,42 @@ struct ContentView: View {
     }
 
     private var filteredLibraryTracks: [LibraryTrack] {
-        guard !searchQuery.isEmpty else { return libraryTracks }
-        return libraryTracks.filter {
-            $0.displayTitle.lowercased().contains(searchQuery) ||
-            $0.displayArtist.lowercased().contains(searchQuery) ||
-            $0.metadata.album.lowercased().contains(searchQuery) ||
-            $0.metadata.genre.lowercased().contains(searchQuery) ||
-            $0.fileURL.lastPathComponent.lowercased().contains(searchQuery)
-        }
+        LibraryQuery(artist: artistFilter, genre: genreFilter, year: yearFilter, format: formatFilter,
+            search: searchText, sort: LibrarySort(rawValue: librarySort) ?? .title,
+            ascending: libraryAscending).apply(to: libraryTracks)
+    }
+
+    private func libraryFilter(_ label: String, value: Binding<String>, options: [String]) -> some View {
+        Picker(label, selection: value) {
+            Text("All").tag("")
+            ForEach(options, id: \.self) { Text($0).tag($0) }
+        }.pickerStyle(.menu)
+    }
+
+    private var libraryFilterBar: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                libraryFilter("Artist", value: $artistFilter, options: Array(Set(libraryTracks.map { LibraryQuery.tag($0.metadata.artist) })).sorted())
+                libraryFilter("Genre", value: $genreFilter, options: Array(Set(libraryTracks.map { LibraryQuery.tag($0.metadata.genre) })).sorted())
+                libraryFilter("Year", value: $yearFilter, options: Array(Set(libraryTracks.map { LibraryQuery.tag($0.metadata.year) })).sorted())
+                libraryFilter("Format", value: $formatFilter, options: Array(Set(libraryTracks.map(\.fileExtension))).sorted())
+                Button("Clear Filters") { artistFilter = ""; genreFilter = ""; yearFilter = ""; formatFilter = "" }
+            }
+            HStack {
+                Picker("Sort by", selection: $librarySort) {
+                    ForEach(LibrarySort.allCases) { Text($0.rawValue).tag($0.rawValue) }
+                }.frame(width: 230)
+                Picker("Order", selection: $libraryAscending) {
+                    Text("Ascending").tag(true)
+                    Text("Descending").tag(false)
+                }.frame(width: 210)
+                Spacer()
+                Text("\(filteredLibraryTracks.count) of \(libraryTracks.count) tracks").font(.caption).foregroundStyle(.secondary)
+            }
+            if !importer.libraryOrganizationStatus.isEmpty {
+                HStack { ProgressView().controlSize(.small); Text(importer.libraryOrganizationStatus).font(.caption) }
+            }
+        }.padding(10)
     }
 
     private var filteredRecent: [ImportHistoryRecord] { filterHistory(importer.recentImports) }

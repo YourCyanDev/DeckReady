@@ -30,14 +30,14 @@ jobs:
       - name: Verify app version and create DMG
         run: |
           app='.dmg-cache/DerivedData/Build/Products/Release/DeckReady.app'
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist")" = '1.9.2'
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Contents/Info.plist")" = '11'
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist")" = '1.10.0'
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Contents/Info.plist")" = '12'
           DECKREADY_NO_PAUSE=1 bash 'Build DeckReady DMG Fast.command' --package-only
       - name: Upload DMG and PKG
         uses: actions/upload-artifact@v4
         with:
-          name: DeckReady-macOS-a1.09.2
+          name: DeckReady-macOS-a1.10.0
           path: |
-            macos/DeckReady-a1.09.2.dmg
-            macos/DeckReady-a1.09.2.pkg
+            macos/DeckReady-a1.10.0.dmg
+            macos/DeckReady-a1.10.0.pkg
           if-no-files-found: error

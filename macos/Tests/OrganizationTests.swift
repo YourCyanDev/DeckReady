@@ -50,6 +50,41 @@ struct OrganizationTests {
         check(loaded.activeOrganizationModes.count == 2, "Duplicate modes ignored by routing")
         loaded.additionalOrganizationModes = []
         check(loaded.availableAdditionalOrganizationModes == [.genreArtist], "Remove restores Add more option")
+        let libraryRoot = temp.appendingPathComponent("ExistingLibrary")
+        try FileManager.default.createDirectory(at: libraryRoot.appendingPathComponent("Nested"), withIntermediateDirectories: true)
+        let unmanaged = libraryRoot.appendingPathComponent("never-imported.MP3")
+        let nested = libraryRoot.appendingPathComponent("Nested/song.wav")
+        let bytes = Data([7, 8, 9, 10])
+        try bytes.write(to: unmanaged)
+        try bytes.write(to: nested)
+        try bytes.write(to: libraryRoot.appendingPathComponent("notes.txt"))
+        try bytes.write(to: libraryRoot.appendingPathComponent(".hidden.mp3"))
+        try FileManager.default.createSymbolicLink(at: libraryRoot.appendingPathComponent("linked.mp3"), withDestinationURL: unmanaged)
+        let discovered = try LibraryCrateScan.discover(in: libraryRoot)
+        check(discovered.count == 2 && discovered.contains(unmanaged), "Scan must include existing songs outside import history, recurse, and skip hidden files/symlinks")
+        let rows = [
+            LibraryTrack(fileURL: unmanaged, metadata: TrackMetadata(title: "Zulu", artist: "Artist B", album: "Two", genre: "Pop", year: "2026", duration: 100)),
+            LibraryTrack(fileURL: nested, metadata: TrackMetadata(title: "Alpha", artist: "Artist A", album: "One", genre: "Hip-Hop", year: "2025", duration: 20)),
+            LibraryTrack(fileURL: libraryRoot.appendingPathComponent("blank.wav"), metadata: .empty)
+        ]
+        var query = LibraryQuery(artist: "Artist A", genre: "Hip-Hop", year: "2025", format: "WAV")
+        check(query.apply(to: rows).map(\.fileURL) == [nested], "Filters must combine with AND")
+        query.genre = "Pop"
+        check(query.apply(to: rows).isEmpty, "Combined filters exclude nonmatches")
+        check(LibraryQuery(artist: "Unknown").apply(to: rows).count == 1, "Unknown tag filter")
+        check(LibraryQuery(search: "2026").apply(to: rows).count == 1, "Search includes year")
+        check(LibraryQuery(sort: .duration, ascending: false).apply(to: rows).first?.fileURL == unmanaged, "Duration sort is numeric and descending")
+        check(LibraryQuery(sort: .year, ascending: false).apply(to: rows).first?.fileURL == unmanaged, "Year sort is numeric")
+        for sort in LibrarySort.allCases {
+            let up = LibraryQuery(sort: sort).apply(to: rows).map(\.fileURL)
+            let down = LibraryQuery(sort: sort, ascending: false).apply(to: rows).map(\.fileURL)
+            check(up == Array(down.reversed()), "Ascending/descending order with stable tie breaker")
+        }
+        _ = CrateOrganization.plan(discovered.map { ($0, TrackMetadata.empty) }, modes: [.yearArtist, .genreArtist], flatName: "Ignored")
+        let unmanagedAfter = try Data(contentsOf: unmanaged)
+        check(unmanagedAfter == bytes, "Organize scan/plan must leave unmanaged audio untouched")
+        let nestedAfter = try Data(contentsOf: nested)
+        check(nestedAfter == bytes, "Organize scan/plan must leave nested audio untouched")
         print("All macOS organization, missing-tag, folder, safety and settings regression checks passed.")
     }
 }

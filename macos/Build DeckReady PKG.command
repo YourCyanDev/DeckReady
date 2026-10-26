@@ -1,8 +1,8 @@
 #!/bin/bash
 set -Eeuo pipefail
 
-VERSION="a1.09.2"
-NUMERIC_VERSION="1.9.2"
+VERSION="a1.10.0"
+NUMERIC_VERSION="1.10.0"
 APP_NAME="DeckReady"
 BUNDLE_ID="com.deckready.app"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

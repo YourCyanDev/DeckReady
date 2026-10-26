@@ -1,3 +1,9 @@
+## Organize Library and browsing (a1.10.0)
+
+Open Music Library and click **Organize Library** to scan the entire configured music folder, including songs that were not imported through DeckReady. It adds references to the organization structures selected in Settings. Review the song/crate counts, then confirm. Audio files are not copied, moved, renamed or retagged; existing crate contents are retained. Serato must be closed during updates. Active filters do not restrict this operation.
+
+Use Artist, Genre, Year and Format filters together; Clear Filters resets them. Sort by Title, Artist, Album, Genre, Year, Duration or Filename, in either direction. Unknown tags can be filtered explicitly.
+
 ## Persistent DMG background fix
 
 The local builder and CI use the same DMG packager. It embeds the branded PNG and writes Finder's .DS_Store directly, with a background alias targeting the image's own volume. The final compressed DMG is mounted read-only twice at different paths to verify the background and saved icon positions survive reopening. No Finder automation is needed. Packaging requires Python 3.9+; dependencies are installed in a private build-cache environment on first use.

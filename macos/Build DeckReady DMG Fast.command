@@ -1,7 +1,7 @@
 #!/bin/bash
 set -Eeuo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-VERSION="a1.09.2"
+VERSION="a1.10.0"
 BUILD_ROOT="$SCRIPT_DIR/.dmg-cache"
 APP_PATH="$BUILD_ROOT/DerivedData/Build/Products/Release/DeckReady.app"
 TOOLS="$BUILD_ROOT/dmg-tools"
