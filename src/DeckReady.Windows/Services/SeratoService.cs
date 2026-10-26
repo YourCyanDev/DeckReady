@@ -137,9 +137,9 @@ public sealed class SeratoService
     }
 
     public SeratoSyncResult SyncOrganizedCrates(
-        IEnumerable<(string Path, TrackMetadata Metadata)> tracks, OrganizationMode mode, string crateName)
+        IEnumerable<(string Path, TrackMetadata Metadata)> tracks, IEnumerable<OrganizationMode> modes, string crateName)
     {
-        var plan = CrateOrganization.Plan(tracks, mode, crateName);
+        var plan = CrateOrganization.Plan(tracks, modes, crateName);
         var added = 0;
         var total = 0;
         foreach (var crate in plan)

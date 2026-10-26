@@ -50,11 +50,22 @@ Check(genres["Hip-Hop%%Yo DJ Hill"].Single() == "a.wav", "Genre artist nesting")
 Check(genres["R&B%%Yo DJ Hill"].Single() == "b.wav", "Same artist under different genre");
 Check(genres["need tag editing"].Count == 2, "Missing genre or artist needs tag editing");
 Check(genres.Keys.All(x => x.Split("%%").Length <= 2 && !x.Contains("Songs")), "No third crate level");
+var combined = CrateOrganization.Plan(new[]
+{
+    ("ready.wav", new TrackMetadata { Year = "2026", Genre = "Hip-Hop", Artist = "Yo DJ Hill" }),
+    ("partial.wav", new TrackMetadata { Genre = "Hip-Hop", Artist = "Yo DJ Hill" }),
+    ("missing.wav", new TrackMetadata())
+}, new[] { OrganizationMode.YearArtist, OrganizationMode.GenreArtist, OrganizationMode.YearArtist }, "Ignored");
+Check(combined["2026%%Yo DJ Hill"].Single() == "ready.wav", "Combined year structure");
+Check(combined["Hip-Hop%%Yo DJ Hill"].Count == 2, "Combined genre structure");
+Check(combined["need tag editing"].Count == 2, "Review crate must deduplicate incomplete tags across modes");
+Check(combined["Hip-Hop%%Yo DJ Hill"].Contains("ready.wav"), "Same audio referenced by both structures");
 var options = new JsonSerializerOptions { Converters = { new JsonStringEnumConverter() } };
 foreach (var mode in Enum.GetValues<OrganizationMode>())
 {
-    var settings = new AppSettings { OrganizationMode = mode };
+    var settings = new AppSettings { OrganizationMode = mode, AdditionalOrganizationModes = new() { OrganizationMode.GenreArtist } };
     Check(JsonSerializer.Deserialize<AppSettings>(JsonSerializer.Serialize(settings, options), options)!.OrganizationMode == mode, "Settings mode round trip");
+    Check(JsonSerializer.Deserialize<AppSettings>(JsonSerializer.Serialize(settings, options), options)!.AdditionalOrganizationModes.Single() == OrganizationMode.GenreArtist, "Extra options persist");
 }
 Check((int)OrganizationMode.Year == 3, "Existing numeric settings must remain compatible");
 

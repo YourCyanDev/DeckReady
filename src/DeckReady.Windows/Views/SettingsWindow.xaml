@@ -42,6 +42,11 @@
                     <TextBlock Text="Organize by:" Width="170" VerticalAlignment="Center"/>
                     <ComboBox x:Name="OrganizationBox" Width="260"/>
                 </StackPanel>
+                <StackPanel x:Name="AdditionalOrganizationRows"/>
+                <Button x:Name="AddOrganizationButton" Content="Add more" Click="AddOrganization_Click"
+                        HorizontalAlignment="Left" Margin="170,0,0,8"/>
+                <TextBlock Text="Files follow the first option. Serato gets every selected crate structure using the same stored files."
+                           Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="170,0,0,8"/>
                 <TextBlock Text="Year → Artist and Genre → Artist store new imports in matching folders and sync parent crates with artist subcrates containing songs. Tracks missing the selected year/genre or artist go to the need tag editing crate. Existing files stay where they are."
                            Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="170,0,0,8"/>
                 <CheckBox x:Name="WriteTagsCheck" Content="Write edited metadata to the actual audio files" Margin="0,5"/>

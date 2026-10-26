@@ -1,5 +1,7 @@
 # Unreleased
 
+- Added **Add more** / **Remove** organization controls. Year/artist and genre/artist crates can be enabled together; the first option controls file storage, and all selected structures reference the same audio files. Selections persist between sessions.
+
 - Added **Year → Artist (songs inside)** and **Genre → Artist (songs inside)** under Settings → Import Behavior → Organize by.
 - New imports use `Library/Year/Artist/song.ext`. With automatic Serato sync, tracks are added to a year crate and an artist subcrate (`2026 → Yo DJ Hill → songs`), while Serato is closed.
 - Genre/artist mode uses genre crates with artist subcrates and matching genre/artist folders. Missing genre or artist tags go only to **need tag editing**.

@@ -331,6 +331,8 @@ public partial class MainWindow : Window
         {
             // Snapshot edited metadata on the UI thread, including deferred/retried imports.
             var mode = _settings.OrganizationMode;
+            var modes = new[] { mode }.Concat(_settings.AdditionalOrganizationModes ?? new()).Distinct().ToArray();
+            var needsTags = modes.Any(x => x is OrganizationMode.YearArtist or OrganizationMode.GenreArtist);
             var crateName = _settings.SeratoCrateName;
             var metadata = QueueItems.Where(x => x.DestinationPath is not null)
                 .GroupBy(x => x.DestinationPath!, StringComparer.OrdinalIgnoreCase)
@@ -338,16 +340,11 @@ public partial class MainWindow : Window
             await Task.Run(() =>
             {
                 var tracks = paths.Select(path => (Path: path, Metadata:
-                    mode is not (OrganizationMode.YearArtist or OrganizationMode.GenreArtist) ? new TrackMetadata() :
+                    !needsTags ? new TrackMetadata() :
                     metadata.TryGetValue(path, out var tags) ? tags : _metadata.Read(path))).ToList();
-                _serato.SyncOrganizedCrates(tracks, mode, crateName);
+                _serato.SyncOrganizedCrates(tracks, modes, crateName);
             });
-            var syncTarget = mode switch
-            {
-                OrganizationMode.YearArtist => "Year → Artist crates / need tag editing",
-                OrganizationMode.GenreArtist => "Genre → Artist crates / need tag editing",
-                _ => crateName
-            };
+            var syncTarget = needsTags ? "selected crates (including need tag editing when needed)" : crateName;
             _historyStore.UpdateSeratoSynced(paths);
 
             foreach (var item in QueueItems.Where(x => x.DestinationPath is not null && paths.Contains(x.DestinationPath, StringComparer.OrdinalIgnoreCase)))

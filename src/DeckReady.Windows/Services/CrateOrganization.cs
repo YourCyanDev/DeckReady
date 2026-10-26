@@ -7,9 +7,16 @@ public static class CrateOrganization
     public static IReadOnlyDictionary<string, List<string>> Plan(
         IEnumerable<(string Path, TrackMetadata Metadata)> tracks,
         OrganizationMode mode, string flatCrateName)
+        => Plan(tracks, new[] { mode }, flatCrateName);
+
+    public static IReadOnlyDictionary<string, List<string>> Plan(
+        IEnumerable<(string Path, TrackMetadata Metadata)> tracks,
+        IEnumerable<OrganizationMode> modes, string flatCrateName)
     {
+        var selectedModes = modes.Distinct().ToArray();
         var crates = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         foreach (var (path, metadata) in tracks)
+        foreach (var mode in selectedModes)
         {
             if (mode is OrganizationMode.YearArtist or OrganizationMode.GenreArtist)
             {

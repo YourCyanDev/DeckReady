@@ -72,6 +72,10 @@ Their storage folders use **Unknown Year** / **Unknown Artist** until tags are f
 Choose **Genre → Artist (songs inside)** for a genre crate with artist subcrates,
 such as **Hip-Hop → Yo DJ Hill**, and matching `Library/Hip-Hop/Yo DJ Hill/` folders.
 Missing genre or artist tags send tracks to **need tag editing** in that mode.
+Use **Add more** to enable both structures together; **Remove** deletes an extra option.
+The first option controls storage folders. Each selected crate structure references the same
+stored audio, so songs are not copied twice. A track with an incomplete tag in either selected
+structure also appears in **need tag editing**. Duplicate selections are blocked when saving.
 Existing files are not reorganized; existing crate contents are retained.
 
 ## Downloads
