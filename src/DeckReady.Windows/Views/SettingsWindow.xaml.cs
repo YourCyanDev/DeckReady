@@ -22,8 +22,18 @@ public partial class SettingsWindow : Window
         ClearAutoImportCheck.IsChecked = settings.ClearAutoImportFolderAfterImport;
         ImportModeBox.ItemsSource = Enum.GetValues<ImportMode>();
         ImportModeBox.SelectedItem = settings.ImportMode;
-        OrganizationBox.ItemsSource = Enum.GetValues<OrganizationMode>();
-        OrganizationBox.SelectedItem = settings.OrganizationMode;
+        OrganizationBox.ItemsSource = new[]
+        {
+            new { Mode = OrganizationMode.NoSubfolders, Label = "No subfolders" },
+            new { Mode = OrganizationMode.Artist, Label = "Artist" },
+            new { Mode = OrganizationMode.Genre, Label = "Genre" },
+            new { Mode = OrganizationMode.Year, Label = "Year" },
+            new { Mode = OrganizationMode.YearArtist, Label = "Year → Artist (songs inside)" },
+            new { Mode = OrganizationMode.GenreArtist, Label = "Genre → Artist (songs inside)" }
+        };
+        OrganizationBox.DisplayMemberPath = "Label";
+        OrganizationBox.SelectedValuePath = "Mode";
+        OrganizationBox.SelectedValue = settings.OrganizationMode;
         WriteTagsCheck.IsChecked = settings.WriteMetadataToFiles;
         DeleteContainerCheck.IsChecked = settings.DeleteSourceContainerAfterImport;
         AutoSeratoCheck.IsChecked = settings.AutomaticSeratoImport;
@@ -124,7 +134,7 @@ public partial class SettingsWindow : Window
         _settings.AutoImportEnabled = AutoImportEnabledCheck.IsChecked == true;
         _settings.ClearAutoImportFolderAfterImport = ClearAutoImportCheck.IsChecked == true;
         _settings.ImportMode = (ImportMode)(ImportModeBox.SelectedItem ?? ImportMode.Copy);
-        _settings.OrganizationMode = (OrganizationMode)(OrganizationBox.SelectedItem ?? OrganizationMode.NoSubfolders);
+        _settings.OrganizationMode = (OrganizationMode)(OrganizationBox.SelectedValue ?? OrganizationMode.NoSubfolders);
         _settings.WriteMetadataToFiles = WriteTagsCheck.IsChecked == true;
         _settings.DeleteSourceContainerAfterImport = DeleteContainerCheck.IsChecked == true;
         _settings.AutomaticSeratoImport = AutoSeratoCheck.IsChecked == true;

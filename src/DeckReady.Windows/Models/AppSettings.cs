@@ -11,7 +11,9 @@ public enum OrganizationMode
     NoSubfolders,
     Artist,
     Genre,
-    Year
+    Year,
+    YearArtist,
+    GenreArtist
 }
 
 public enum SeratoAppPreference

@@ -1,3 +1,12 @@
+# Unreleased
+
+- Added **Year → Artist (songs inside)** and **Genre → Artist (songs inside)** under Settings → Import Behavior → Organize by.
+- New imports use `Library/Year/Artist/song.ext`. With automatic Serato sync, tracks are added to a year crate and an artist subcrate (`2026 → Yo DJ Hill → songs`), while Serato is closed.
+- Genre/artist mode uses genre crates with artist subcrates and matching genre/artist folders. Missing genre or artist tags go only to **need tag editing**.
+- Year/artist mode uses year names as top-level crates instead of the single crate-name setting. Existing crate tracks are retained. No existing library files are moved.
+- Tracks missing either year or artist go only to the **need tag editing** crate; their storage folders use **Unknown Year** / **Unknown Artist**. Edited queue metadata is used even with file-tag writing disabled.
+- Windows source implementation; macOS source is not present in this repository. iOS has a separate draft implementation.
+
 # DeckReady Windows a1.08.0
 
 ## Added

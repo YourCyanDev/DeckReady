@@ -136,6 +136,21 @@ public sealed class SeratoService
         return false;
     }
 
+    public SeratoSyncResult SyncOrganizedCrates(
+        IEnumerable<(string Path, TrackMetadata Metadata)> tracks, OrganizationMode mode, string crateName)
+    {
+        var plan = CrateOrganization.Plan(tracks, mode, crateName);
+        var added = 0;
+        var total = 0;
+        foreach (var crate in plan)
+        {
+            var result = SyncCrate(crate.Value, crate.Key);
+            added += result.AddedTracks;
+            total += result.TotalTracks;
+        }
+        return new SeratoSyncResult(added, total);
+    }
+
     public SeratoSyncResult SyncCrate(IEnumerable<string> trackPaths, string crateName)
     {
         RefreshStatus();

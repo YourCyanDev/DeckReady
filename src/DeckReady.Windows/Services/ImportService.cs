@@ -92,16 +92,23 @@ public sealed class ImportService
         if (string.IsNullOrWhiteSpace(cleaned)) return "Unknown";
         foreach (var c in Path.GetInvalidFileNameChars())
             cleaned = cleaned.Replace(c, '-');
-        return cleaned.Trim().TrimEnd('.');
+        cleaned = cleaned.Trim().TrimEnd('.');
+        return string.IsNullOrWhiteSpace(cleaned) ? "Unknown" : cleaned;
     }
 
-    private static string ResolveDestinationFolder(AppSettings settings, TrackMetadata metadata)
+    public static string ResolveDestinationFolder(AppSettings settings, TrackMetadata metadata)
     {
         var baseFolder = settings.LibraryFolder;
         return settings.OrganizationMode switch
         {
             OrganizationMode.Artist => Path.Combine(baseFolder, SanitizeFolderName(string.IsNullOrWhiteSpace(metadata.Artist) ? "Unknown Artist" : metadata.Artist)),
             OrganizationMode.Genre => Path.Combine(baseFolder, SanitizeFolderName(string.IsNullOrWhiteSpace(metadata.Genre) ? "Unknown Genre" : metadata.Genre)),
+            OrganizationMode.GenreArtist => Path.Combine(baseFolder,
+                SanitizeFolderName(string.IsNullOrWhiteSpace(metadata.Genre) ? "Unknown Genre" : metadata.Genre),
+                SanitizeFolderName(string.IsNullOrWhiteSpace(metadata.Artist) ? "Unknown Artist" : metadata.Artist)),
+            OrganizationMode.YearArtist => Path.Combine(baseFolder,
+                SanitizeFolderName(string.IsNullOrWhiteSpace(metadata.Year) ? "Unknown Year" : metadata.Year),
+                SanitizeFolderName(string.IsNullOrWhiteSpace(metadata.Artist) ? "Unknown Artist" : metadata.Artist)),
             OrganizationMode.Year => Path.Combine(baseFolder, SanitizeFolderName(string.IsNullOrWhiteSpace(metadata.Year) ? "Unknown Year" : metadata.Year)),
             _ => baseFolder
         };
