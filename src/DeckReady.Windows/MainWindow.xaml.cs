@@ -1399,7 +1399,7 @@ public partial class MainWindow : Window
     private void About_Click(object sender, RoutedEventArgs e)
     {
         MessageBox.Show(this,
-            "DeckReady for Windows\nAlpha a1.08.0\n\nOrganize. Prepare. Play.\n\nIncludes Music Library browsing, song selection tools, the Serato duplicate checker, DeckReady Inbox automation, and community/support links in the Help menu.",
+            "DeckReady for Windows\nAlpha a1.09.0\n\nOrganize. Prepare. Play.\n\nIncludes Music Library browsing, song selection tools, the Serato duplicate checker, DeckReady Inbox automation, and community/support links in the Help menu.",
             "About DeckReady", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 

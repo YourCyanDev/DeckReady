@@ -3,7 +3,7 @@ setlocal EnableExtensions
 cd /d "%~dp0"
 
 echo =====================================
-echo   DeckReady a1.08.0 Build + Install
+echo   DeckReady a1.09.0 Build + Install
 echo   MSI Builder revision 10
 echo =====================================
 echo.
@@ -11,8 +11,8 @@ echo.
 call "Build Windows MSI.bat"
 if errorlevel 1 exit /b %errorlevel%
 
-set "MSI=%CD%\release\msi\DeckReady-Windows-a1.08.0.msi"
-set "LOG=%CD%\release\msi\DeckReady-Windows-a1.08.0-install.log"
+set "MSI=%CD%\release\msi\DeckReady-Windows-a1.09.0.msi"
+set "LOG=%CD%\release\msi\DeckReady-Windows-a1.09.0-install.log"
 
 if not exist "%MSI%" (
   echo ERROR: Expected MSI was not created:

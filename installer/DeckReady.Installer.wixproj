@@ -1,9 +1,9 @@
 <Project Sdk="WixToolset.Sdk/6.0.0">
   <PropertyGroup>
-    <!-- Internal Windows Installer version. Public DeckReady version remains a1.08.0. -->
-    <Version>1.8.0</Version>
-    <PackageVersion>1.8.0</PackageVersion>
-    <DeckReadyReleaseLabel Condition="'$(DeckReadyReleaseLabel)' == ''">a1.08.0</DeckReadyReleaseLabel>
+    <!-- Internal Windows Installer version. Public DeckReady version remains a1.09.0. -->
+    <Version>1.9.0</Version>
+    <PackageVersion>1.9.0</PackageVersion>
+    <DeckReadyReleaseLabel Condition="'$(DeckReadyReleaseLabel)' == ''">a1.09.0</DeckReadyReleaseLabel>
 
     <OutputName>DeckReady-Windows-$(DeckReadyReleaseLabel)</OutputName>
     <InstallerPlatform>x64</InstallerPlatform>

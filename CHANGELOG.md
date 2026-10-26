@@ -1,4 +1,6 @@
-# Unreleased
+# DeckReady Windows a1.09.0
+
+- Raised Windows app and MSI versions to **a1.09.0 / 1.9.0**, so this build upgrades older 1.8.x installations. Updated local build scripts and CI output names to match.
 
 - Added **Add more** / **Remove** organization controls. Year/artist and genre/artist crates can be enabled together; the first option controls file storage, and all selected structures reference the same audio files. Selections persist between sessions.
 
