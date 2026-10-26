@@ -61,7 +61,8 @@ struct OrganizationTests {
         try bytes.write(to: libraryRoot.appendingPathComponent(".hidden.mp3"))
         try FileManager.default.createSymbolicLink(at: libraryRoot.appendingPathComponent("linked.mp3"), withDestinationURL: unmanaged)
         let discovered = try LibraryCrateScan.discover(in: libraryRoot)
-        check(discovered.count == 2 && discovered.contains(unmanaged), "Scan must include existing songs outside import history, recurse, and skip hidden files/symlinks")
+        check(discovered.count == 2, "Scan must recurse and skip hidden files/symlinks")
+        check(discovered.contains { $0.resolvingSymlinksInPath().path == unmanaged.resolvingSymlinksInPath().path }, "Scanner must include unmanaged audio despite macOS temporary path aliases")
         let rows = [
             LibraryTrack(fileURL: unmanaged, metadata: TrackMetadata(title: "Zulu", artist: "Artist B", album: "Two", genre: "Pop", year: "2026", duration: 100)),
             LibraryTrack(fileURL: nested, metadata: TrackMetadata(title: "Alpha", artist: "Artist A", album: "One", genre: "Hip-Hop", year: "2025", duration: 20)),
