@@ -1,0 +1,287 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A00000000000000000000001 /* DeckReadyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000001 /* DeckReadyApp.swift */; };
+		A00000000000000000000002 /* ImportItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000002 /* ImportItem.swift */; };
+		A00000000000000000000003 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000003 /* AppSettings.swift */; };
+		A00000000000000000000004 /* MetadataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000004 /* MetadataService.swift */; };
+		A00000000000000000000005 /* ZipService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000005 /* ZipService.swift */; };
+		A00000000000000000000006 /* SeratoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000006 /* SeratoService.swift */; };
+		A00000000000000000000007 /* ImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000007 /* ImportService.swift */; };
+		A00000000000000000000008 /* ImportRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000008 /* ImportRowView.swift */; };
+		A00000000000000000000009 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000009 /* SettingsView.swift */; };
+		A0000000000000000000000A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000A /* ContentView.swift */; };
+		A0000000000000000000000D /* InboxWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000D /* InboxWatcher.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B00000000000000000000001 /* DeckReadyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeckReadyApp.swift; sourceTree = "<group>"; };
+		B00000000000000000000002 /* ImportItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportItem.swift; sourceTree = "<group>"; };
+		B00000000000000000000003 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		B00000000000000000000004 /* MetadataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetadataService.swift; sourceTree = "<group>"; };
+		B00000000000000000000005 /* ZipService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZipService.swift; sourceTree = "<group>"; };
+		B00000000000000000000006 /* SeratoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeratoService.swift; sourceTree = "<group>"; };
+		B00000000000000000000007 /* ImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportService.swift; sourceTree = "<group>"; };
+		B00000000000000000000008 /* ImportRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportRowView.swift; sourceTree = "<group>"; };
+		B00000000000000000000009 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		B0000000000000000000000A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B0000000000000000000000B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B0000000000000000000000C /* DeckReady.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DeckReady.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0000000000000000000000D /* InboxWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxWatcher.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C00000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D00000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				D00000000000000000000002 /* DeckReady */,
+				D00000000000000000000006 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D00000000000000000000002 /* DeckReady */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000001 /* DeckReadyApp.swift */,
+				D00000000000000000000003 /* Models */,
+				D00000000000000000000004 /* Services */,
+				D00000000000000000000005 /* Views */,
+				B0000000000000000000000B /* Info.plist */,
+			);
+			path = DeckReady;
+			sourceTree = "<group>";
+		};
+		D00000000000000000000003 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000002 /* ImportItem.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		D00000000000000000000004 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000003 /* AppSettings.swift */,
+				B00000000000000000000004 /* MetadataService.swift */,
+				B00000000000000000000005 /* ZipService.swift */,
+				B00000000000000000000006 /* SeratoService.swift */,
+				B00000000000000000000007 /* ImportService.swift */,
+				B0000000000000000000000D /* InboxWatcher.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		D00000000000000000000005 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000008 /* ImportRowView.swift */,
+				B00000000000000000000009 /* SettingsView.swift */,
+				B0000000000000000000000A /* ContentView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		D00000000000000000000006 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B0000000000000000000000C /* DeckReady.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E00000000000000000000001 /* DeckReady */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F00000000000000000000002 /* Build configuration list for PBXNativeTarget "DeckReady" */;
+			buildPhases = (
+				C00000000000000000000002 /* Sources */,
+				C00000000000000000000001 /* Frameworks */,
+				C00000000000000000000003 /* Resources */,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = DeckReady;
+			packageProductDependencies = ();
+			productName = DeckReady;
+			productReference = B0000000000000000000000C /* DeckReady.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E00000000000000000000002 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1520;
+				LastUpgradeCheck = 1520;
+				TargetAttributes = {
+					E00000000000000000000001 = {
+						CreatedOnToolsVersion = 15.2;
+					};
+				};
+			};
+			buildConfigurationList = F00000000000000000000001 /* Build configuration list for PBXProject "DeckReady" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (en, Base);
+			mainGroup = D00000000000000000000001;
+			packageReferences = ();
+			productRefGroup = D00000000000000000000006 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (E00000000000000000000001 /* DeckReady */);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C00000000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C00000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000001 /* DeckReadyApp.swift in Sources */,
+				A00000000000000000000002 /* ImportItem.swift in Sources */,
+				A00000000000000000000003 /* AppSettings.swift in Sources */,
+				A00000000000000000000004 /* MetadataService.swift in Sources */,
+				A00000000000000000000005 /* ZipService.swift in Sources */,
+				A00000000000000000000006 /* SeratoService.swift in Sources */,
+				A00000000000000000000007 /* ImportService.swift in Sources */,
+				A00000000000000000000008 /* ImportRowView.swift in Sources */,
+				A00000000000000000000009 /* SettingsView.swift in Sources */,
+				A0000000000000000000000A /* ContentView.swift in Sources */,
+				A0000000000000000000000D /* InboxWatcher.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+
+
+/* Begin XCBuildConfiguration section */
+		110000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		110000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+		};
+			name = Release;
+		};
+		110000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 11;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = DeckReady/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.9.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.deckready.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_INTEROP_MODE = objcxx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		110000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 11;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = DeckReady/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.9.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.deckready.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_INTEROP_MODE = objcxx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F00000000000000000000001 /* Build configuration list for PBXProject "DeckReady" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				110000000000000000000001 /* Debug */,
+				110000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F00000000000000000000002 /* Build configuration list for PBXNativeTarget "DeckReady" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				110000000000000000000003 /* Debug */,
+				110000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = E00000000000000000000002 /* Project object */;
+}
