@@ -3,12 +3,12 @@
       Id="YourCyanDev.DeckReady"
       Name="DeckReady"
       Manufacturer="YourCyanDev"
-      Version="1.9.0"
+      Version="1.9.2"
       Scope="perMachine">
 
     <SummaryInformation Description="DeckReady music preparation and Serato workflow utility" />
 
-    <!-- Public app version stays a1.09.0; 1.9.0 is installer-only. -->
+    <!-- Public app version stays a1.09.2; 1.9.2 is installer-only. -->
     <MajorUpgrade
         AllowSameVersionUpgrades="yes"
         DowngradeErrorMessage="A newer version of DeckReady is already installed." />
@@ -31,7 +31,7 @@
     <WixVariable Id="WixUIDialogBmp" Value="Assets\InstallerDialog.png" />
     <WixVariable Id="WixUIBannerBmp" Value="Assets\InstallerBanner.png" />
     <WixVariable Id="WixUILicenseRtf" Value="Assets\License.rtf" />
-    <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="DeckReady a1.09.0 has been installed successfully." />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="DeckReady a1.09.2 has been installed successfully." />
 
     <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
       <Component Id="DeckReadyExecutable" Guid="*">

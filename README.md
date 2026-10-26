@@ -61,7 +61,7 @@ DeckReady is in alpha. Features and packaging can differ between platforms and b
 - Use logs to troubleshoot imports, metadata, file movement, watched folders, Serato synchronization, and application errors.
 - Open GitHub, Discord, and issue reporting from the Help menu, available since a1.07.0.
 
-### Nested artist crates (Windows a1.09.0)
+### Nested artist crates (Windows a1.09.2)
 
 In **Settings → Import Behavior → Organize by**, choose **Year → Artist (songs inside)**.
 New files are stored as `Library/2026/Yo DJ Hill/song.mp3`. With Serato sync enabled,
