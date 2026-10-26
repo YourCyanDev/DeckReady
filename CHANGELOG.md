@@ -1,3 +1,10 @@
+# DeckReady Windows a1.09.3
+
+- Preserve the existing a1.09.1 Serato restart-reminder preference, including the Don’t show again checkbox.
+- Preserve the existing behavior of only reopening Serato after DeckReady closed a running instance.
+- Includes both nested crate options, Add more / Remove and need tag editing.
+- Numeric app/MSI version 1.9.3.
+
 # DeckReady Windows a1.09.2
 
 - Raised Windows app and MSI versions to **a1.09.2 / 1.9.2**, so this build upgrades older 1.8.x and 1.9.1 installations. Updated local build scripts and CI output names to match.

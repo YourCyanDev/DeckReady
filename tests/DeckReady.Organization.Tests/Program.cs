@@ -63,9 +63,10 @@ Check(combined["Hip-Hop%%Yo DJ Hill"].Contains("ready.wav"), "Same audio referen
 var options = new JsonSerializerOptions { Converters = { new JsonStringEnumConverter() } };
 foreach (var mode in Enum.GetValues<OrganizationMode>())
 {
-    var settings = new AppSettings { OrganizationMode = mode, AdditionalOrganizationModes = new() { OrganizationMode.GenreArtist } };
+    var settings = new AppSettings { OrganizationMode = mode, AdditionalOrganizationModes = new() { OrganizationMode.GenreArtist }, ShowSeratoRestartPrompt = false };
     Check(JsonSerializer.Deserialize<AppSettings>(JsonSerializer.Serialize(settings, options), options)!.OrganizationMode == mode, "Settings mode round trip");
     Check(JsonSerializer.Deserialize<AppSettings>(JsonSerializer.Serialize(settings, options), options)!.AdditionalOrganizationModes.Single() == OrganizationMode.GenreArtist, "Extra options persist");
+    Check(!JsonSerializer.Deserialize<AppSettings>(JsonSerializer.Serialize(settings, options), options)!.ShowSeratoRestartPrompt, "Existing restart reminder preference persists");
 }
 Check((int)OrganizationMode.Year == 3, "Existing numeric settings must remain compatible");
 

@@ -2,11 +2,11 @@
 setlocal EnableExtensions
 cd /d "%~dp0"
 
-rem DeckReady Windows a1.09.2 - MSI Builder Revision 13
+rem DeckReady Windows a1.09.3 - MSI Builder Revision 13
 rem Numeric MSI version must increase when packaging a new public release.
 rem This build upgrades the previous 1.8.x and 1.9.1 installers.
-set "RELEASE_LABEL=a1.09.2"
-set "NUMERIC_VERSION=1.9.2"
+set "RELEASE_LABEL=a1.09.3"
+set "NUMERIC_VERSION=1.9.3"
 set "Version="
 
 set "PUBLISH_DIR=%CD%\release\win-x64"

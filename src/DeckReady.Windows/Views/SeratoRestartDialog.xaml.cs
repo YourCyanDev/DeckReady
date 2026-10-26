@@ -5,6 +5,7 @@ namespace DeckReady.Views;
 public partial class SeratoRestartDialog : Window
 {
     public bool RestartRequested { get; private set; }
+    public bool DontShowAgain => DontShowAgainCheck.IsChecked == true;
 
     public SeratoRestartDialog()
     {

@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0"
 
 echo =====================================
-echo   DeckReady for Windows - Alpha a1.09.2
+echo   DeckReady for Windows - Alpha a1.09.3
 echo =====================================
 echo.
 

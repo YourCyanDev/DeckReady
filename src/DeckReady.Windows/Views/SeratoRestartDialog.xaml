@@ -1,7 +1,7 @@
 <Window x:Class="DeckReady.Views.SeratoRestartDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Restart Serato to Apply Changes" Height="255" Width="520"
+        Title="Restart Serato to Apply Changes" SizeToContent="Height" Width="520"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
         Style="{StaticResource DeckReadyWindow}">
     <StackPanel Margin="24" Background="{StaticResource WindowBrush}">
@@ -10,6 +10,9 @@
                    Text="DeckReady stored the tracks successfully, but Serato is currently open. DeckReady needs Serato closed before it safely updates the crate."/>
         <TextBlock Margin="0,8,0,0" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"
                    Text="Quit &amp; Reopen asks Serato to close normally, syncs the pending tracks, then reopens it. DeckReady will not force-quit Serato."/>
+        <CheckBox x:Name="DontShowAgainCheck" Content="Don't show again" Margin="0,18,0,0"/>
+        <TextBlock Margin="24,6,0,0" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"
+                   Text="Tracks will wait until you close Serato and click Retry Serato. You can turn this reminder back on in Settings."/>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
             <Button Content="Later" Click="Later_Click"/>
             <Button Content="Quit &amp; Reopen Serato" Style="{StaticResource AccentButton}" Click="Restart_Click"/>

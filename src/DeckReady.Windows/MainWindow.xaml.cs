@@ -28,6 +28,9 @@ public partial class MainWindow : Window
     private readonly AudioPreviewService _audioPreview = new();
     private AppSettings _settings;
     private readonly HashSet<string> _tempExtractionRoots = new(StringComparer.OrdinalIgnoreCase);
+    // Tracks that were deferred specifically because Serato was already open.
+    // Only these paths are eligible for an automatic reopen after DeckReady closes Serato.
+    private readonly HashSet<string> _pendingSeratoReopenPaths = new(StringComparer.OrdinalIgnoreCase);
     private readonly SemaphoreSlim _autoImportGate = new(1, 1);
     private readonly AutoImportStateStore _autoImportState = new();
     private AutoImportWatcher? _autoImportWatcher;
@@ -301,9 +304,35 @@ public partial class MainWindow : Window
         _serato.RefreshStatus();
         if (_serato.IsRunning)
         {
+            foreach (var path in paths)
+                _pendingSeratoReopenPaths.Add(path);
+
             MarkWaitingForSerato(paths);
+            if (!_settings.ShowSeratoRestartPrompt)
+            {
+                RefreshUI();
+                return;
+            }
+
             var dialog = new SeratoRestartDialog { Owner = this };
             dialog.ShowDialog();
+
+            // Remember the checkbox for Later, Quit & Reopen, and the close button.
+            if (dialog.DontShowAgain)
+            {
+                _settings.ShowSeratoRestartPrompt = false;
+                try
+                {
+                    _settingsService.Save(_settings);
+                }
+                catch (Exception ex)
+                {
+                    _log.Error($"Could not save the Serato restart reminder preference: {ex.Message}");
+                    MessageBox.Show(this,
+                        "The reminder is hidden for this session, but DeckReady could not save that preference. You can try saving it again in Settings.",
+                        "Settings Could Not Be Saved", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
 
             if (dialog.RestartRequested)
             {
@@ -317,12 +346,16 @@ public partial class MainWindow : Window
                     return;
                 }
 
-                await CompleteSeratoSyncAsync(paths, reopen: true);
+                await CompleteSeratoSyncAsync(paths, reopen: _settings.LaunchSeratoWhenNeeded);
             }
             return;
         }
 
-        await CompleteSeratoSyncAsync(paths, reopen: _settings.LaunchSeratoWhenNeeded);
+        // Serato was already closed when this sync started, so leave it closed.
+        foreach (var path in paths)
+            _pendingSeratoReopenPaths.Remove(path);
+
+        await CompleteSeratoSyncAsync(paths, reopen: false);
     }
 
     private async Task CompleteSeratoSyncAsync(List<string> paths, bool reopen)
@@ -355,6 +388,8 @@ public partial class MainWindow : Window
             }
 
             var reopened = !reopen || _serato.Launch(_settings.PreferredSeratoApp);
+            foreach (var path in paths)
+                _pendingSeratoReopenPaths.Remove(path);
             MessageBox.Show(this,
                 $"{paths.Count} track{(paths.Count == 1 ? "" : "s")} synced to “{syncTarget}”."
                 + (reopen ? $"\n\nSerato {(reopened ? "was reopened." : "could not be reopened automatically.")}" : ""),
@@ -399,7 +434,9 @@ public partial class MainWindow : Window
             return;
         }
 
-        await CompleteSeratoSyncAsync(pending, reopen: _settings.LaunchSeratoWhenNeeded);
+        var shouldReopen = _settings.LaunchSeratoWhenNeeded
+            && pending.Any(path => _pendingSeratoReopenPaths.Contains(path));
+        await CompleteSeratoSyncAsync(pending, reopen: shouldReopen);
     }
 
     private void CleanupSuccessfulSources(IReadOnlyCollection<ImportItem> processed)
@@ -1399,7 +1436,7 @@ public partial class MainWindow : Window
     private void About_Click(object sender, RoutedEventArgs e)
     {
         MessageBox.Show(this,
-            "DeckReady for Windows\nAlpha a1.09.2\n\nOrganize. Prepare. Play.\n\nIncludes Music Library browsing, song selection tools, the Serato duplicate checker, DeckReady Inbox automation, and community/support links in the Help menu.",
+            "DeckReady for Windows\nAlpha a1.09.3\n\nOrganize. Prepare. Play.\n\nIncludes Music Library browsing, song selection tools, the Serato duplicate checker, DeckReady Inbox automation, and community/support links in the Help menu.",
             "About DeckReady", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
