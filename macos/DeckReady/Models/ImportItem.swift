@@ -262,9 +262,11 @@ enum LibraryCrateScan {
             }) else { throw CocoaError(.fileReadUnknown) }
         var urls: Set<URL> = []
         for case let url as URL in enumerator {
-            let values = try url.resourceValues(forKeys: Set(keys))
-            if values.isSymbolicLink == true { enumerator.skipDescendants(); continue }
-            if values.isRegularFile == true && formats.contains(url.pathExtension.lowercased()) {
+            let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+            // Directory enumeration does not follow symbolic links. Calling skipDescendants
+            // for a symlink to a file can skip an unrelated directory that follows it.
+            guard attributes[.type] as? FileAttributeType == .typeRegular else { continue }
+            if formats.contains(url.pathExtension.lowercased()) {
                 urls.insert(url.standardizedFileURL)
             }
         }
