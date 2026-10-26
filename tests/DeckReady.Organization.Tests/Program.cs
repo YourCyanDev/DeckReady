@@ -100,4 +100,41 @@ try
     Check(ImportService.ResolveDestinationFolder(settings, item.Metadata) == settings.LibraryFolder, "Old flat layout");
 }
 finally { Directory.Delete(temp, true); }
+var libraryTemp = Path.Combine(Path.GetTempPath(), "DeckReady-library-test-" + Guid.NewGuid());
+Directory.CreateDirectory(Path.Combine(libraryTemp, "Nested"));
+try
+{
+    var unmanaged = Path.Combine(libraryTemp, "never-imported.MP3");
+    var nested = Path.Combine(libraryTemp, "Nested", "song.wav");
+    var bytes = new byte[] { 7, 8, 9, 10 };
+    await File.WriteAllBytesAsync(unmanaged, bytes);
+    await File.WriteAllBytesAsync(nested, bytes);
+    await File.WriteAllTextAsync(Path.Combine(libraryTemp, "notes.txt"), "Leave me alone");
+    var discovered = LibraryCrateScan.Discover(libraryTemp);
+    Check(discovered.Count == 2 && discovered.Contains(unmanaged), "Whole library scan includes unmanaged and nested audio, not text files");
+    var rows = new[]
+    {
+        new LibraryTrack { FilePath = unmanaged, Metadata = new() { Title = "Zulu", Artist = "Artist B", Genre = "Pop", Year = "2026", Duration = TimeSpan.FromSeconds(100) } },
+        new LibraryTrack { FilePath = nested, Metadata = new() { Title = "Alpha", Artist = "Artist A", Genre = "Hip-Hop", Year = "2025", Duration = TimeSpan.FromSeconds(20) } },
+        new LibraryTrack { FilePath = Path.Combine(libraryTemp, "blank.wav"), Metadata = new() }
+    };
+    var query = new LibraryQuery { Artist = "Artist A", Genre = "Hip-Hop", Year = "2025", Format = "WAV" };
+    Check(query.Apply(rows).Single().FilePath == nested, "Library filters must combine with AND");
+    query.Genre = "Pop";
+    Check(query.Apply(rows).Count == 0, "Filters exclude nonmatching genre");
+    Check(new LibraryQuery { Artist = "Unknown" }.Apply(rows).Count == 1, "Unknown artist filter");
+    Check(new LibraryQuery { Search = "2026" }.Apply(rows).Count == 1, "Search includes year");
+    Check(new LibraryQuery { Sort = LibrarySort.Duration, Ascending = false }.Apply(rows).First().FilePath == unmanaged, "Numeric duration sort");
+    Check(new LibraryQuery { Sort = LibrarySort.Year, Ascending = false }.Apply(rows).First().FilePath == unmanaged, "Numeric year sort");
+    foreach (var sort in Enum.GetValues<LibrarySort>())
+    {
+        var up = new LibraryQuery { Sort = sort }.Apply(rows).Select(x => x.FilePath).ToList();
+        var down = new LibraryQuery { Sort = sort, Ascending = false }.Apply(rows).Select(x => x.FilePath).Reverse().ToList();
+        Check(up.SequenceEqual(down), "All sort categories must reverse consistently with deterministic ties");
+    }
+    _ = CrateOrganization.Plan(discovered.Select(x => (x, new TrackMetadata())), new[] { OrganizationMode.YearArtist, OrganizationMode.GenreArtist }, "Ignored");
+    Check((await File.ReadAllBytesAsync(unmanaged)).SequenceEqual(bytes), "Unmanaged audio must remain untouched");
+    Check((await File.ReadAllBytesAsync(nested)).SequenceEqual(bytes), "Nested audio must remain untouched");
+}
+finally { Directory.Delete(libraryTemp, true); }
 Console.WriteLine("All organization, settings compatibility, and import regression checks passed.");

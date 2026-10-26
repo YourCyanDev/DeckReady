@@ -9,10 +9,10 @@
     <AssemblyName>DeckReady</AssemblyName>
     <RootNamespace>DeckReady</RootNamespace>
     <ApplicationIcon>Assets\DeckReady.ico</ApplicationIcon>
-    <Version>1.9.3-alpha</Version>
-    <FileVersion>1.9.3.0</FileVersion>
-    <AssemblyVersion>1.9.3.0</AssemblyVersion>
-    <InformationalVersion>a1.09.3</InformationalVersion>
+    <Version>1.10.0-alpha</Version>
+    <FileVersion>1.10.0.0</FileVersion>
+    <AssemblyVersion>1.10.0.0</AssemblyVersion>
+    <InformationalVersion>a1.10.0</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>

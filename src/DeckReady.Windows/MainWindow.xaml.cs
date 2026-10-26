@@ -35,6 +35,9 @@ public partial class MainWindow : Window
     private readonly AutoImportStateStore _autoImportState = new();
     private AutoImportWatcher? _autoImportWatcher;
     private bool _selectionMode;
+    private bool _libraryOperationBusy;
+    private int _visibleLibraryCount;
+    private bool _updatingLibraryFilters;
     private AppPage _currentPage = AppPage.Queue;
 
     private enum AppPage
@@ -59,6 +62,7 @@ public partial class MainWindow : Window
         _seratoDuplicateScanner = new SeratoDuplicateScanner(_metadata, _log);
         _audioPreview.StateChanged += (_, _) => Dispatcher.BeginInvoke(new Action(UpdateNowPlaying));
 
+        InitializeLibraryFilters();
         RefreshHistoryCollections();
         ShowQueuePage();
         ConfigureAutoImportWatcher();
@@ -216,7 +220,7 @@ public partial class MainWindow : Window
 
     private async Task ImportItemsAsync(List<ImportItem> ready, bool interactive)
     {
-        if (ready.Count == 0) return;
+        if (ready.Count == 0 || _libraryOperationBusy) return;
 
         if (string.IsNullOrWhiteSpace(_settings.LibraryFolder))
         {
@@ -232,6 +236,7 @@ public partial class MainWindow : Window
             return;
         }
 
+        _libraryOperationBusy = true;
         ImportReadyButton.IsEnabled = false;
         try
         {
@@ -295,6 +300,7 @@ public partial class MainWindow : Window
         }
         finally
         {
+            _libraryOperationBusy = false;
             ImportReadyButton.IsEnabled = QueueItems.Any(x => x.State == ImportState.Ready);
         }
     }
@@ -756,11 +762,111 @@ public partial class MainWindow : Window
         AddMusicButton.Visibility = queue ? Visibility.Visible : Visibility.Collapsed;
         AddFolderButton.Visibility = queue ? Visibility.Visible : Visibility.Collapsed;
         ClearFinishedButton.Visibility = queue ? Visibility.Visible : Visibility.Collapsed;
+        OrganizeLibraryButton.Visibility = library ? Visibility.Visible : Visibility.Collapsed;
         RefreshLibraryButton.Visibility = library ? Visibility.Visible : Visibility.Collapsed;
         PlayPauseButton.Visibility = library ? Visibility.Visible : Visibility.Collapsed;
         EditTagsButton.Visibility = library ? Visibility.Visible : Visibility.Collapsed;
         ScanSeratoButton.Visibility = seratoDuplicates ? Visibility.Visible : Visibility.Collapsed;
         SelectModeButton.Visibility = tagEditor ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private void InitializeLibraryFilters()
+    {
+        LibrarySortBox.ItemsSource = Enum.GetValues<LibrarySort>();
+        LibrarySortBox.SelectedIndex = 0;
+        RefreshLibraryFilterOptions();
+    }
+
+    private void RefreshLibraryFilterOptions()
+    {
+        _updatingLibraryFilters = true;
+        void Fill(System.Windows.Controls.ComboBox box, IEnumerable<string> values)
+        {
+            var selected = box.SelectedItem as string ?? "All";
+            var choices = new[] { "All" }.Concat(values.Distinct().OrderBy(x => x, StringComparer.OrdinalIgnoreCase)).ToArray();
+            box.ItemsSource = choices;
+            box.SelectedItem = choices.Contains(selected) ? selected : "All";
+        }
+        Fill(LibraryArtistFilter, LibraryItems.Select(x => LibraryQuery.Tag(x.Metadata.Artist)));
+        Fill(LibraryGenreFilter, LibraryItems.Select(x => LibraryQuery.Tag(x.Metadata.Genre)));
+        Fill(LibraryYearFilter, LibraryItems.Select(x => LibraryQuery.Tag(x.Metadata.Year)));
+        Fill(LibraryFormatFilter, LibraryItems.Select(x => x.Format));
+        _updatingLibraryFilters = false;
+        ApplyLibraryFilters();
+    }
+
+    private void ApplyLibraryFilters()
+    {
+        if (!IsInitialized || _updatingLibraryFilters || LibrarySortBox is null || LibrarySearchBox is null) return;
+        string Filter(System.Windows.Controls.ComboBox box) => box.SelectedIndex <= 0 ? "" : box.SelectedItem as string ?? "";
+        var query = new LibraryQuery { Artist = Filter(LibraryArtistFilter), Genre = Filter(LibraryGenreFilter),
+            Year = Filter(LibraryYearFilter), Format = Filter(LibraryFormatFilter), Search = LibrarySearchBox.Text,
+            Sort = LibrarySortBox.SelectedItem is LibrarySort sort ? sort : LibrarySort.Title,
+            Ascending = LibraryDescendingCheck.IsChecked != true };
+        var visible = query.Apply(LibraryItems);
+        LibraryGrid.ItemsSource = visible;
+        _visibleLibraryCount = visible.Count;
+        if (_currentPage == AppPage.Library) SummaryText.Text = $"{visible.Count} of {LibraryItems.Count} library tracks";
+    }
+    private void LibraryFilter_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e) => ApplyLibraryFilters();
+    private void LibraryOrder_Changed(object sender, RoutedEventArgs e) => ApplyLibraryFilters();
+    private void LibrarySearch_Changed(object sender, System.Windows.Controls.TextChangedEventArgs e) => ApplyLibraryFilters();
+    private void ClearLibraryFilters_Click(object sender, RoutedEventArgs e)
+    {
+        _updatingLibraryFilters = true;
+        foreach (var box in new[] { LibraryArtistFilter, LibraryGenreFilter, LibraryYearFilter, LibraryFormatFilter }) box.SelectedIndex = 0;
+        LibrarySearchBox.Text = "";
+        _updatingLibraryFilters = false;
+        ApplyLibraryFilters();
+    }
+
+    private async void OrganizeLibrary_Click(object sender, RoutedEventArgs e)
+    {
+        if (_libraryOperationBusy || !await _autoImportGate.WaitAsync(0)) return;
+        _libraryOperationBusy = true;
+        OrganizeLibraryButton.IsEnabled = false;
+        RefreshLibraryButton.IsEnabled = false;
+        var root = _settings.LibraryFolder;
+        var modes = new[] { _settings.OrganizationMode }.Concat(_settings.AdditionalOrganizationModes ?? new()).Distinct().ToArray();
+        var crateName = _settings.SeratoCrateName;
+        try
+        {
+            var paths = await Task.Run(() => LibraryCrateScan.Discover(root));
+            if (paths.Count == 0) { MessageBox.Show(this, "No supported audio files were found in the music library.", "Organize Library"); return; }
+            var tracks = new List<(string Path, TrackMetadata Metadata)>();
+            foreach (var path in paths)
+            {
+                PageSubtitleText.Text = $"Reading library tags: {tracks.Count + 1} of {paths.Count}...";
+                var tags = await Task.Run(() => { try { return _metadata.Read(path); } catch { return new TrackMetadata(); } });
+                tracks.Add((path, tags));
+            }
+            var plan = CrateOrganization.Plan(tracks, modes, crateName);
+            var review = plan.TryGetValue("need tag editing", out var missing) ? missing.Count : 0;
+            if (MessageBox.Show(this, $"Add {tracks.Count} songs from {root} to {plan.Count} crates?\n\nNeed tag editing: {review}\n\nAudio files stay in place. Existing crate tracks are retained. This processes the full folder, including tracks DeckReady never imported, regardless of active filters.",
+                "Organize Library", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+            _serato.RefreshStatus();
+            var wasRunning = _serato.IsRunning;
+            if (wasRunning)
+            {
+                if (MessageBox.Show(this, "Serato must be closed to update crates. Quit Serato and organize the library now?", "Organize Library", MessageBoxButton.OKCancel) != MessageBoxResult.OK) return;
+                if (!await _serato.QuitAndWaitAsync()) throw new IOException("Serato is still open. Close it and try Organize Library again.");
+            }
+            await Task.Run(() => _serato.SyncOrganizedCrates(tracks, modes, crateName));
+            _historyStore.UpdateSeratoSynced(paths);
+            if (wasRunning && _settings.LaunchSeratoWhenNeeded) _serato.Launch(_settings.PreferredSeratoApp);
+            _log.Info($"Organized {tracks.Count} existing songs into {plan.Count} crates without changing audio files.");
+            MessageBox.Show(this, $"Organized {tracks.Count} existing songs into {plan.Count} crates. Audio files were left in place.", "Library Organized");
+        }
+        catch (Exception ex) { MessageBox.Show(this, ex.Message, "Could Not Organize Library", MessageBoxButton.OK, MessageBoxImage.Error); }
+        finally
+        {
+            _libraryOperationBusy = false;
+            _autoImportGate.Release();
+            OrganizeLibraryButton.IsEnabled = true;
+            RefreshLibraryButton.IsEnabled = true;
+            PageSubtitleText.Text = $"{LibraryItems.Count} tracks • {root}";
+            RefreshUI();
+        }
     }
 
     private async void RefreshLibrary_Click(object sender, RoutedEventArgs e) => await RefreshLibraryAsync();
@@ -789,6 +895,7 @@ public partial class MainWindow : Window
             LibraryItems.Add(new LibraryTrack { FilePath = path, Metadata = metadata });
         }
 
+        RefreshLibraryFilterOptions();
         PageSubtitleText.Text = _currentPage == AppPage.TagEditor
             ? $"{LibraryItems.Count} tracks available for tag editing"
             : $"{LibraryItems.Count} tracks • {_settings.LibraryFolder}";
@@ -1220,7 +1327,7 @@ public partial class MainWindow : Window
 
         SummaryText.Text = _currentPage switch
         {
-            AppPage.Library => $"{LibraryItems.Count} library tracks",
+            AppPage.Library => $"{_visibleLibraryCount} of {LibraryItems.Count} library tracks",
             AppPage.TagEditor => $"{LibraryItems.Count} tracks available for tag editing",
             AppPage.Recent => $"{RecentItems.Count} recent imports",
             AppPage.ImportDuplicates => $"{DuplicateItems.Count} import duplicates",
@@ -1436,7 +1543,7 @@ public partial class MainWindow : Window
     private void About_Click(object sender, RoutedEventArgs e)
     {
         MessageBox.Show(this,
-            "DeckReady for Windows\nAlpha a1.09.3\n\nOrganize. Prepare. Play.\n\nIncludes Music Library browsing, song selection tools, the Serato duplicate checker, DeckReady Inbox automation, and community/support links in the Help menu.",
+            "DeckReady for Windows\nAlpha a1.10.0\n\nOrganize. Prepare. Play.\n\nIncludes Music Library browsing, song selection tools, the Serato duplicate checker, DeckReady Inbox automation, and community/support links in the Help menu.",
             "About DeckReady", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 

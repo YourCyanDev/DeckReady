@@ -1,3 +1,9 @@
+# Windows a1.10.0
+
+- Added Organize Library: scan all audio in the configured music folder, including songs DeckReady never imported, and add references to the selected crates. Audio files remain in place; no copying, moving, renaming or tag writes occur.
+- Added Artist, Genre, Year and Format filters, search, seven Sort by categories, and ascending/descending order. Filters do not limit Organize Library.
+- Preview track/crate counts before updating; close Serato safely before writes and preserve existing crate contents.
+
 # DeckReady Windows a1.09.3
 
 - Preserve the existing a1.09.1 Serato restart-reminder preference, including the Don’t show again checkbox.
