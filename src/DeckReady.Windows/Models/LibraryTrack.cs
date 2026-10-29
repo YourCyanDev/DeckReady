@@ -20,6 +20,7 @@ public sealed class LibraryTrack : INotifyPropertyChanged
             OnPropertyChanged(nameof(DisplayTitle));
             OnPropertyChanged(nameof(DisplayArtist));
             OnPropertyChanged(nameof(Album));
+            OnPropertyChanged(nameof(MissingTags));
             OnPropertyChanged(nameof(DurationText));
         }
     }
@@ -33,6 +34,7 @@ public sealed class LibraryTrack : INotifyPropertyChanged
     public string DisplayTitle => string.IsNullOrWhiteSpace(Metadata.Title) ? Path.GetFileNameWithoutExtension(FilePath) : Metadata.Title;
     public string DisplayArtist => string.IsNullOrWhiteSpace(Metadata.Artist) ? "Unknown Artist" : Metadata.Artist;
     public string Album => string.IsNullOrWhiteSpace(Metadata.Album) ? "—" : Metadata.Album;
+    public string MissingTags => string.Join(", ", Metadata.MissingFields);
     public string Format => Path.GetExtension(FilePath).TrimStart('.').ToUpperInvariant();
     public string DurationText => Metadata.Duration <= TimeSpan.Zero ? "—" : $"{(int)Metadata.Duration.TotalMinutes}:{Metadata.Duration.Seconds:00}";
 

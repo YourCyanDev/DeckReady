@@ -69,6 +69,7 @@
                         <TextBlock Text="LIBRARY" Foreground="{StaticResource MutedTextBrush}" FontSize="11" FontWeight="Bold" Margin="14,8,0,4"/>
                         <Button x:Name="QueueNavButton" Style="{StaticResource NavButton}" Content="⬇  Import Queue" Click="QueueNav_Click"/>
                         <Button x:Name="LibraryNavButton" Style="{StaticResource NavButton}" Content="♫  Music Library" Click="LibraryNav_Click"/>
+                        <Button x:Name="NeedsTagsNavButton" Style="{StaticResource NavButton}" Content="⚠  Needs Tag Editing" Click="NeedsTagsNav_Click"/>
                         <Button x:Name="TagEditorNavButton" Style="{StaticResource NavButton}" Content="🏷  Tag Editor" Click="TagEditorNav_Click"/>
                         <Button x:Name="RecentNavButton" Style="{StaticResource NavButton}" Content="↻  Recent Imports" Click="RecentNav_Click"/>
                         <Button x:Name="DuplicatesNavButton" Style="{StaticResource NavButton}" Content="⧉  Import Duplicates" Click="DuplicatesNav_Click"/>
@@ -201,6 +202,7 @@
                                         <DataGridTextColumn Header="Title" Binding="{Binding DisplayTitle}" Width="1.7*"/>
                                         <DataGridTextColumn Header="Artist" Binding="{Binding DisplayArtist}" Width="1.35*"/>
                                         <DataGridTextColumn Header="Album" Binding="{Binding Album}" Width="1.2*"/>
+                                        <DataGridTextColumn x:Name="MissingTagsColumn" Header="Missing tags" Binding="{Binding MissingTags}" Width="1.5*" Visibility="Collapsed"/>
                                         <DataGridTextColumn Header="Format" Binding="{Binding Format}" Width="72"/>
                                     </DataGrid.Columns>
                                 </DataGrid>

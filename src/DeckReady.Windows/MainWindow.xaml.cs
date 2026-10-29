@@ -45,6 +45,7 @@ public partial class MainWindow : Window
         Queue,
         Library,
         TagEditor,
+        NeedsTagEditing,
         Recent,
         ImportDuplicates,
         SeratoDuplicates
@@ -560,8 +561,12 @@ public partial class MainWindow : Window
     private void LibraryGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (_selectionMode) return;
-        if (LibraryGrid.SelectedItem is LibraryTrack track)
-            EditLibraryTrack(track);
+        // Header/scrollbar double-clicks must not edit a previously selected song.
+        if (e.OriginalSource is not DependencyObject source ||
+            System.Windows.Controls.ItemsControl.ContainerFromElement(LibraryGrid, source)
+                is not System.Windows.Controls.DataGridRow row || row.Item is not LibraryTrack track) return;
+        e.Handled = true;
+        EditLibraryTrack(track);
     }
 
     private void RecentGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -594,7 +599,23 @@ public partial class MainWindow : Window
     {
         if (_selectionMode) return;
         if (SeratoDuplicatesGrid.SelectedItem is SeratoDuplicateTrack track && File.Exists(track.FilePath))
-            EditTrack(track.FilePath, track.Metadata, metadata => track.Metadata = metadata);
+            // Use the embedded editor instead of constructing a modal window on a grid event.
+        try
+        {
+            if (!File.Exists(track.FilePath))
+            {
+                MessageBox.Show(this, "That audio file can no longer be found. Refresh the library to update the list.", "DeckReady", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            ShowTagEditorPage();
+            TagEditorGrid.SelectedItem = track;
+            LoadSelectedTagEditorTrack();
+        }
+        catch (Exception ex)
+        {
+            _log.Error($"Could not open library tag editor: {ex}");
+            MessageBox.Show(this, $"DeckReady could not open that track for editing.\n\n{ex.Message}", "Tag Editor", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void EditLibraryTrack(LibraryTrack track)
@@ -610,9 +631,18 @@ public partial class MainWindow : Window
             return;
         }
 
-        var editor = new MetadataEditorWindow(path, metadata, _metadata) { Owner = this };
-        if (editor.ShowDialog() == true)
-            apply(editor.Result);
+        try
+        {
+            var editor = new MetadataEditorWindow(path, metadata, _metadata) { Owner = this };
+            if (editor.ShowDialog() == true) apply(editor.Result);
+            RefreshTagReview();
+            ApplyLibraryFilters();
+        }
+        catch (Exception ex)
+        {
+            _log.Error($"Could not open metadata editor: {ex}");
+            MessageBox.Show(this, $"DeckReady could not open the metadata editor.\n\n{ex.Message}", "Metadata Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettings();
@@ -627,7 +657,7 @@ public partial class MainWindow : Window
             RefreshUI();
             if (_settings.AutoImportEnabled)
                 _ = ScanAutoImportFolderAsync();
-            if (_currentPage is AppPage.Library or AppPage.TagEditor)
+            if (_currentPage is AppPage.Library or AppPage.TagEditor or AppPage.NeedsTagEditing)
                 _ = RefreshLibraryAsync();
         }
     }
@@ -662,6 +692,31 @@ public partial class MainWindow : Window
         if (TagEditorGrid.SelectedItem is null && LibraryItems.Count > 0)
             TagEditorGrid.SelectedIndex = 0;
     }
+    private async void NeedsTagsNav_Click(object sender, RoutedEventArgs e)
+    {
+        ShowTagEditorPage(needsTags: true);
+        await RefreshLibraryAsync();
+    }
+
+    private void RefreshTagReview()
+    {
+        var selected = SelectedTagEditorTrack?.FilePath;
+        var needsTags = _currentPage == AppPage.NeedsTagEditing;
+        var missing = LibraryItems.Where(x => x.Metadata.NeedsTagEditing).ToList();
+        NeedsTagsNavButton.Content = $"⚠  Needs Tag Editing ({missing.Count})";
+        MissingTagsColumn.Visibility = needsTags ? Visibility.Visible : Visibility.Collapsed;
+        var rows = needsTags ? missing : LibraryItems.ToList();
+        TagEditorGrid.ItemsSource = rows;
+        TagEditorGrid.SelectedItem = rows.FirstOrDefault(x => x.FilePath == selected) ?? rows.FirstOrDefault();
+        if (needsTags)
+        {
+            PageSubtitleText.Text = missing.Count == 0
+                ? "No missing tags found. All scanned tracks have title, artist, album, genre and year."
+                : $"{missing.Count} tracks need title, artist, album, genre or year. Select a track to fix its tags.";
+            SummaryText.Text = $"{missing.Count} tracks need tag editing";
+        }
+    }
+
     private void RecentNav_Click(object sender, RoutedEventArgs e) => ShowRecentPage();
     private void DuplicatesNav_Click(object sender, RoutedEventArgs e) => ShowDuplicatesPage();
     private void SeratoDuplicatesNav_Click(object sender, RoutedEventArgs e) => ShowSeratoDuplicatesPage();
@@ -688,14 +743,15 @@ public partial class MainWindow : Window
         RefreshSelectionUI();
     }
 
-    private void ShowTagEditorPage()
+    private void ShowTagEditorPage(bool needsTags = false)
     {
-        _currentPage = AppPage.TagEditor;
+        _currentPage = needsTags ? AppPage.NeedsTagEditing : AppPage.TagEditor;
         _selectionMode = false;
         ClearAllSelections();
-        SetNavSelection(TagEditorNavButton);
+        SetNavSelection(needsTags ? NeedsTagsNavButton : TagEditorNavButton);
         SetPageVisibility(TagEditorPage);
-        PageTitleText.Text = "Tag Editor";
+        PageTitleText.Text = needsTags ? "Needs Tag Editing" : "Tag Editor";
+        RefreshTagReview();
         PageSubtitleText.Text = "Edit a track's title, artist, album, genre, and year without leaving DeckReady.";
         RefreshHeaderActions();
         RefreshSelectionUI();
@@ -742,7 +798,7 @@ public partial class MainWindow : Window
 
     private void SetNavSelection(System.Windows.Controls.Button active)
     {
-        foreach (var button in new[] { QueueNavButton, LibraryNavButton, TagEditorNavButton, RecentNavButton, DuplicatesNavButton, SeratoDuplicatesNavButton })
+        foreach (var button in new[] { QueueNavButton, LibraryNavButton, TagEditorNavButton, NeedsTagsNavButton, RecentNavButton, DuplicatesNavButton, SeratoDuplicatesNavButton })
         {
             button.ClearValue(System.Windows.Controls.Control.BackgroundProperty);
             button.ClearValue(System.Windows.Controls.Control.ForegroundProperty);
@@ -756,7 +812,7 @@ public partial class MainWindow : Window
     {
         var queue = _currentPage == AppPage.Queue;
         var library = _currentPage == AppPage.Library;
-        var tagEditor = _currentPage == AppPage.TagEditor;
+        var tagEditor = _currentPage is AppPage.TagEditor or AppPage.NeedsTagEditing;
         var seratoDuplicates = _currentPage == AppPage.SeratoDuplicates;
 
         AddMusicButton.Visibility = queue ? Visibility.Visible : Visibility.Collapsed;
@@ -874,6 +930,7 @@ public partial class MainWindow : Window
     private async Task RefreshLibraryAsync()
     {
         LibraryItems.Clear();
+        RefreshTagReview();
         if (string.IsNullOrWhiteSpace(_settings.LibraryFolder) || !Directory.Exists(_settings.LibraryFolder))
         {
             PageSubtitleText.Text = "Choose or create a music storage folder in Settings first.";
@@ -891,7 +948,7 @@ public partial class MainWindow : Window
         {
             TrackMetadata metadata;
             try { metadata = await Task.Run(() => _metadata.Read(path)); }
-            catch { metadata = new TrackMetadata { Title = Path.GetFileNameWithoutExtension(path) }; }
+            catch { metadata = new TrackMetadata(); }
             LibraryItems.Add(new LibraryTrack { FilePath = path, Metadata = metadata });
         }
 
@@ -901,6 +958,7 @@ public partial class MainWindow : Window
             : $"{LibraryItems.Count} tracks • {_settings.LibraryFolder}";
         if (_currentPage == AppPage.TagEditor && TagEditorGrid.SelectedItem is null && LibraryItems.Count > 0)
             TagEditorGrid.SelectedIndex = 0;
+        RefreshTagReview();
         RefreshUI();
     }
 
@@ -979,7 +1037,9 @@ public partial class MainWindow : Window
             TagEditorStatusText.Text = "Saving tags and verifying the audio file...";
             _metadata.WriteWithSafetyBackup(track.FilePath, updated);
             track.Metadata = _metadata.Read(track.FilePath);
+            RefreshTagReview();
             LoadSelectedTagEditorTrack();
+            ApplyLibraryFilters();
             TagEditorStatusText.Text = "Saved and verified successfully.";
             RefreshUI();
         }
@@ -1001,7 +1061,9 @@ public partial class MainWindow : Window
         try
         {
             track.Metadata = _metadata.Read(track.FilePath);
+            RefreshTagReview();
             LoadSelectedTagEditorTrack();
+            ApplyLibraryFilters();
             TagEditorStatusText.Text = "Reloaded tags from the audio file.";
         }
         catch (Exception ex)
@@ -1328,6 +1390,7 @@ public partial class MainWindow : Window
         SummaryText.Text = _currentPage switch
         {
             AppPage.Library => $"{_visibleLibraryCount} of {LibraryItems.Count} library tracks",
+            AppPage.NeedsTagEditing => $"{LibraryItems.Count(x => x.Metadata.NeedsTagEditing)} tracks need tag editing",
             AppPage.TagEditor => $"{LibraryItems.Count} tracks available for tag editing",
             AppPage.Recent => $"{RecentItems.Count} recent imports",
             AppPage.ImportDuplicates => $"{DuplicateItems.Count} import duplicates",

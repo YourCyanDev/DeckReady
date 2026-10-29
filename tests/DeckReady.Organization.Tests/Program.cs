@@ -138,3 +138,22 @@ try
 }
 finally { Directory.Delete(libraryTemp, true); }
 Console.WriteLine("All organization, settings compatibility, and import regression checks passed.");
+
+var completeTags = new TrackMetadata { Title = "Track", Artist = "Artist", Album = "Album", Genre = "Pop", Year = "2026" };
+Check(!completeTags.NeedsTagEditing, "Complete tags must not be flagged");
+Check(new TrackMetadata().MissingFields.SequenceEqual(new[] { "Title", "Artist", "Album", "Genre", "Year" }), "Every missing field is identified");
+foreach (var field in new[] { "Title", "Artist", "Album", "Genre", "Year" })
+{
+    var tags = completeTags.Clone();
+    typeof(TrackMetadata).GetProperty(field)!.SetValue(tags, "  ");
+    Check(tags.MissingFields.SequenceEqual(new[] { field }), "Single missing field: " + field);
+    typeof(TrackMetadata).GetProperty(field)!.SetValue(tags, "Unknown " + field);
+    Check(tags.NeedsTagEditing, "Unknown placeholder: " + field);
+}
+var reviewTrack = new LibraryTrack { FilePath = "filename-title.mp3", Metadata = new TrackMetadata() };
+Check(reviewTrack.DisplayTitle == "filename-title" && reviewTrack.Metadata.MissingFields.Contains("Title"), "Filename display fallback cannot hide missing title");
+reviewTrack.Metadata = completeTags;
+Check(!reviewTrack.Metadata.NeedsTagEditing && reviewTrack.MissingTags == "", "Resolved tags leave review list");
+completeTags.Year = "0000";
+Check(completeTags.MissingFields.SequenceEqual(new[] { "Year" }), "Zero year is missing");
+Console.WriteLine("Tag review regressions passed.");

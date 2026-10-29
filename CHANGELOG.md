@@ -1,5 +1,15 @@
 # Windows a1.10.0
 
+- Library double-click now opens the embedded tag editor; header double-clicks do not launch editing. Other metadata dialogs report errors instead of closing the app.
+- Installer artwork is regenerated from the build release label; removed the stale a1.07.0 artwork from the packaging path.
+
+- Added Needs Tag Editing in the sidebar, with a count, missing field labels, and the existing tag editor. Checks embedded title, artist, album, genre and year, including blank/Unknown values and zero years. Refresh scans all music in the configured library. Tracks leave the view when their tags are completed. No audio is moved or automatically retagged. This view is independent of the additive Serato review crate.
+
+# Windows a1.10.0
+
+- Library double-click now opens the embedded tag editor; header double-clicks do not launch editing. Other metadata dialogs report errors instead of closing the app.
+- Installer artwork is regenerated from the build release label; removed the stale a1.07.0 artwork from the packaging path.
+
 - Added Organize Library: scan all audio in the configured music folder, including songs DeckReady never imported, and add references to the selected crates. Audio files remain in place; no copying, moving, renaming or tag writes occur.
 - Added Artist, Genre, Year and Format filters, search, seven Sort by categories, and ascending/descending order. Filters do not limit Organize Library.
 - Preview track/crate counts before updating; close Serato safely before writes and preserve existing crate contents.

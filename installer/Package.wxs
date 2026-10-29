@@ -28,8 +28,8 @@
     <Property Id="CREATE_DESKTOP_SHORTCUT" Value="1" Secure="yes" />
     <UIRef Id="DeckReadyUI_InstallDir" />
 
-    <WixVariable Id="WixUIDialogBmp" Value="Assets\InstallerDialog.png" />
-    <WixVariable Id="WixUIBannerBmp" Value="Assets\InstallerBanner.png" />
+    <WixVariable Id="WixUIDialogBmp" Value="obj\branding\InstallerDialog.png" />
+    <WixVariable Id="WixUIBannerBmp" Value="obj\branding\InstallerBanner.png" />
     <WixVariable Id="WixUILicenseRtf" Value="Assets\License.rtf" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="DeckReady a1.10.0 has been installed successfully." />
 

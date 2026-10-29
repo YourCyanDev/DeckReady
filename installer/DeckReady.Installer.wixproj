@@ -18,6 +18,10 @@
     <PackageReference Include="WixToolset.UI.wixext" Version="6.0.0" />
   </ItemGroup>
 
+  <Target Name="GenerateDeckReadyBranding" BeforeTargets="BeforeBuild">
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\Generate-Branding.ps1&quot; -ReleaseLabel &quot;$(DeckReadyReleaseLabel)&quot; -OutputDirectory &quot;$(MSBuildProjectDirectory)\obj\branding&quot;" />
+  </Target>
+
   <Target Name="CopyDeckReadyMsiToRelease" AfterTargets="Build">
     <Message Importance="high" Text="DeckReady WiX TargetPath: $(TargetPath)" />
     <MakeDir Directories="$(DeckReadyReleaseMsiDir)" />
