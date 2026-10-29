@@ -12,7 +12,6 @@ internal static class Program
     {
         var app = new App();
         app.InitializeComponent();
-        app.StartupUri = null;
         var window = new MainWindow();
         object? Call(string name, params object[] args) => typeof(MainWindow).GetMethod(name, BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(window,args);
         T Control<T>(string name) => (T)window.FindName(name);
