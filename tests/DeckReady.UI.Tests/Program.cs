@@ -10,10 +10,19 @@ internal static class Program
     [STAThread]
     private static void Main()
     {
+        using var watchdog = new System.Threading.Timer(_ =>
+        {
+            Console.Error.WriteLine("UI smoke test timed out.");
+            try { Console.Error.WriteLine(File.ReadAllText(DeckReady.Services.AppPaths.LogPath)); } catch { }
+            Environment.FailFast("UI smoke test timed out");
+        }, null, TimeSpan.FromSeconds(60), System.Threading.Timeout.InfiniteTimeSpan);
+        Console.WriteLine("Creating app resources");
         var app = new App();
         app.InitializeComponent();
+        Console.WriteLine("Creating MainWindow");
         var window = new MainWindow();
-        object? Call(string name, params object[] args) => typeof(MainWindow).GetMethod(name, BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(window,args);
+        Console.WriteLine("MainWindow initialized");
+        object? Call(string name, params object[] args) { Console.WriteLine("Calling " + name); return typeof(MainWindow).GetMethod(name, BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(window,args); }
         T Control<T>(string name) => (T)window.FindName(name);
         void Check(bool value, string message) { if (!value) throw new Exception(message); }
         var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".wav");
