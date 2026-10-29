@@ -599,7 +599,12 @@ public partial class MainWindow : Window
     {
         if (_selectionMode) return;
         if (SeratoDuplicatesGrid.SelectedItem is SeratoDuplicateTrack track && File.Exists(track.FilePath))
-            // Use the embedded editor instead of constructing a modal window on a grid event.
+            EditTrack(track.FilePath, track.Metadata, metadata => track.Metadata = metadata);
+    }
+
+    private void EditLibraryTrack(LibraryTrack track)
+    {
+        // Open the clicked library track in the embedded editor.
         try
         {
             if (!File.Exists(track.FilePath))
@@ -616,11 +621,6 @@ public partial class MainWindow : Window
             _log.Error($"Could not open library tag editor: {ex}");
             MessageBox.Show(this, $"DeckReady could not open that track for editing.\n\n{ex.Message}", "Tag Editor", MessageBoxButton.OK, MessageBoxImage.Error);
         }
-    }
-
-    private void EditLibraryTrack(LibraryTrack track)
-    {
-        EditTrack(track.FilePath, track.Metadata, metadata => track.Metadata = metadata);
     }
 
     private void EditTrack(string path, TrackMetadata metadata, Action<TrackMetadata> apply)
