@@ -1,0 +1,43 @@
+name: Build macOS
+on:
+  push:
+    branches: ['feature/macos-multi-crates']
+  pull_request:
+    paths: ['macos/**', '.github/workflows/macos.yml']
+permissions:
+  contents: read
+jobs:
+  build-test-package:
+    runs-on: macos-15
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: macos
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Organization and settings regression checks
+        run: |
+          swiftc -swift-version 5 DeckReady/Models/ImportItem.swift DeckReady/Services/AppSettings.swift Tests/OrganizationTests.swift -o "$RUNNER_TEMP/organization-tests"
+          "$RUNNER_TEMP/organization-tests"
+      - name: Build app and PKG
+        env:
+          DECKREADY_NO_PAUSE: '1'
+          TERM: xterm
+        run: bash 'Build DeckReady PKG.command'
+      - name: Verify app version and create DMG
+        run: |
+          app='.dmg-cache/DerivedData/Build/Products/Release/DeckReady.app'
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist")" = '1.10.0'
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Contents/Info.plist")" = '13'
+          DECKREADY_NO_PAUSE=1 bash 'Build DeckReady DMG Fast.command' --package-only
+      - name: Upload DMG and PKG
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeckReady-macOS-a1.10.0
+          path: |
+            macos/DeckReady-a1.10.0.dmg
+            macos/DeckReady-a1.10.0.pkg
+          if-no-files-found: error

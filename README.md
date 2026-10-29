@@ -105,7 +105,7 @@ Start with a small collection while testing an alpha build. Enable source cleanu
 
 ### Windows
 
-The source on `main` is built with **C#, .NET 8, and WPF**. Install the .NET 8 SDK on Windows, then clone the repository:
+The Windows source is built with **C#, .NET 8, and WPF**; macOS source is in `macos/`. Install the .NET 8 SDK on Windows, then clone the repository:
 
 ```powershell
 git clone https://github.com/YourCyanDev/DeckReady.git
@@ -124,7 +124,7 @@ The EXE builder writes to `release\win-x64`. The MSI builder writes to `release\
 
 ### macOS
 
-Use the macOS assets and notes on the [Releases page](https://github.com/YourCyanDev/DeckReady/releases). The current `main` branch contains the Windows source; it does not include a macOS Xcode project.
+Open `macos/DeckReady.xcodeproj` on macOS Ventura 13+ with Xcode 15.2 or newer. Run `macos/Build DeckReady macOS Installers.command` to produce DMG and PKG installers. The macOS a1.09.2 source includes Year → Artist, Genre → Artist, Add more / Remove, and need tag editing, matching the Windows crate options. Songs are tracks inside artist subcrates. The first option controls storage; every selected structure references the same audio files. Live Serato testing remains required.
 
 ### iPhone and iPad
 
