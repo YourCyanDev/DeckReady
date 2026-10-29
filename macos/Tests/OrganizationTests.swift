@@ -6,6 +6,22 @@ struct OrganizationTests {
         func check(_ value: Bool, _ message: String) {
             if !value { fatalError(message) }
         }
+        let complete = TrackMetadata(title: "Track", artist: "Artist", album: "Album", genre: "Pop", year: "2026", duration: 0)
+        check(!complete.needsTagEditing, "Complete tags are not flagged")
+        check(TrackMetadata.empty.missingFields == ["Title", "Artist", "Album", "Genre", "Year"], "All missing fields identified")
+        for (name, key) in [("Title", \TrackMetadata.title), ("Artist", \TrackMetadata.artist), ("Album", \TrackMetadata.album), ("Genre", \TrackMetadata.genre), ("Year", \TrackMetadata.year)] {
+            var tags = complete
+            tags[keyPath: key] = "  "
+            check(tags.missingFields == [name], "Single missing field: " + name)
+            tags[keyPath: key] = "Unknown " + name
+            check(tags.needsTagEditing, "Unknown placeholder: " + name)
+        }
+        var review = LibraryTrack(fileURL: URL(fileURLWithPath: "/tmp/filename.mp3"), metadata: .empty)
+        check(review.displayTitle == "filename" && review.metadata.missingFields.contains("Title"), "Filename cannot conceal missing title")
+        review.metadata = complete
+        check(!review.metadata.needsTagEditing, "Resolved tags leave review list")
+        review.metadata.year = "0000"
+        check(review.metadata.missingFields == ["Year"], "Zero year is missing")
         let root = URL(fileURLWithPath: "/tmp/DeckReadyOrganizationTests", isDirectory: true)
         func track(_ name: String, _ year: String = "2026", _ artist: String = "Yo DJ Hill", _ genre: String = "Hip-Hop") -> (url: URL, metadata: TrackMetadata) {
             (root.appendingPathComponent(name), TrackMetadata(title: name, artist: artist, album: "", genre: genre, year: year, duration: 0))

@@ -8,6 +8,7 @@ private enum LibrarySection: String, Hashable {
     case queue
     case musicLibrary
     case tagEditor
+    case needsTagEditing
     case recent
     case duplicates
     case seratoDuplicates
@@ -67,7 +68,7 @@ struct ContentView: View {
             VStack(spacing: 0) {
                 toolbar
                 Divider()
-                if selectedSection == .musicLibrary || selectedSection == .tagEditor {
+                if selectedSection == .musicLibrary || selectedSection == .tagEditor || selectedSection == .needsTagEditing {
                     libraryFilterBar
                     Divider()
                 }
@@ -129,10 +130,14 @@ struct ContentView: View {
             selectionMode = false
             selectedKeys.removeAll()
             preview.stop()
-            if (selectedSection == .musicLibrary || selectedSection == .tagEditor) && libraryTracks.isEmpty {
+            if (selectedSection == .musicLibrary || selectedSection == .tagEditor || selectedSection == .needsTagEditing) && libraryTracks.isEmpty {
                 refreshMusicLibrary()
             }
-            if selectedSection == .tagEditor, tagEditorSelection == nil, let first = libraryTracks.first {
+            if selectedSection == .needsTagEditing {
+                artistFilter = ""; genreFilter = ""; yearFilter = ""; formatFilter = ""; searchText = ""
+                refreshMusicLibrary()
+            }
+            if (selectedSection == .tagEditor || selectedSection == .needsTagEditing), let first = filteredLibraryTracks.first {
                 selectTagEditorTrack(first)
             }
         }
@@ -149,6 +154,7 @@ struct ContentView: View {
             Section("Library") {
                 sidebarButton(title: "Import Queue", systemImage: "tray.and.arrow.down.fill", section: .queue, badge: nil)
                 sidebarButton(title: "Music Library", systemImage: "music.note.list", section: .musicLibrary, badge: libraryTracks.count)
+                sidebarButton(title: "Needs Tag Editing", systemImage: "tag.fill", section: .needsTagEditing, badge: libraryTracks.filter { $0.metadata.needsTagEditing }.count)
                 sidebarButton(title: "Tag Editor", systemImage: "tag.fill", section: .tagEditor, badge: nil)
                 sidebarButton(title: "Recent Imports", systemImage: "clock.arrow.circlepath", section: .recent, badge: importer.recentImports.count)
                 sidebarButton(title: "Import Duplicates", systemImage: "doc.on.doc", section: .duplicates, badge: importer.duplicateHistory.count)
@@ -240,7 +246,7 @@ struct ContentView: View {
                     .disabled(importer.isBusy || isScanningLibrary || settings.libraryFolder == nil)
                 Button(isScanningLibrary ? "Scanning…" : "Refresh Library") { refreshMusicLibrary() }
                     .disabled(isScanningLibrary || settings.libraryFolder == nil)
-            case .tagEditor:
+            case .tagEditor, .needsTagEditing:
                 Button(isScanningLibrary ? "Scanning…" : "Refresh Tracks") { refreshMusicLibrary() }
                     .disabled(isScanningLibrary || settings.libraryFolder == nil)
             case .recent:
@@ -264,7 +270,7 @@ struct ContentView: View {
             queueContent
         case .musicLibrary:
             musicLibraryContent
-        case .tagEditor:
+        case .tagEditor, .needsTagEditing:
             tagEditorContent
         case .recent:
             historyContent(records: filteredRecent, duplicateHistory: false, emptyTitle: "No recent imports", emptyMessage: "Tracks you import with DeckReady will show up here.")
@@ -350,7 +356,7 @@ struct ContentView: View {
         } else if settings.libraryFolder == nil {
             EmptyStateView(title: "Choose a Music Library", systemImage: "folder", message: "Pick your permanent music storage folder in Settings first.")
         } else if filteredLibraryTracks.isEmpty {
-            EmptyStateView(title: libraryTracks.isEmpty ? "No songs found" : "No matching tracks", systemImage: "tag", message: libraryTracks.isEmpty ? "Import music or click Refresh Tracks." : "Try a different search.")
+            EmptyStateView(title: selectedSection == .needsTagEditing && !libraryTracks.contains(where: { $0.metadata.needsTagEditing }) ? "No missing tags" : "No matching tracks", systemImage: "tag", message: selectedSection == .needsTagEditing ? "Tracks missing title, artist, album, genre or year appear here. Refresh Tracks to scan again, or clear your filters." : "Import music, refresh tracks, or try a different search.")
         } else {
             HSplitView {
                 VStack(spacing: 0) {
@@ -383,6 +389,10 @@ struct ContentView: View {
                                     Text(track.displayTitle).fontWeight(.medium).lineLimit(1)
                                     Text("\(track.displayArtist) • \(track.fileExtension)")
                                         .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                    if selectedSection == .needsTagEditing {
+                                        Text("Missing: " + track.metadata.missingFields.joined(separator: ", "))
+                                            .font(.caption).foregroundStyle(.orange).lineLimit(2)
+                                    }
                                 }
                                 Spacer(minLength: 8)
                                 if tagEditorSelection == track.id {
@@ -484,6 +494,13 @@ struct ContentView: View {
         return libraryTracks.first(where: { $0.id == id })
     }
 
+    private func advanceTagReviewIfResolved() {
+        guard selectedSection == .needsTagEditing,
+              selectedTagEditorTrack?.metadata.needsTagEditing != true else { return }
+        if let next = filteredLibraryTracks.first { selectTagEditorTrack(next) }
+        else { tagEditorSelection = nil; tagEditorDraft = .empty }
+    }
+
     private var tagEditorCanSave: Bool {
         guard let track = selectedTagEditorTrack, tagEditorSupportsWriting(track) else { return false }
         return !tagEditorDraft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -502,11 +519,12 @@ struct ContentView: View {
     private func reloadTagEditorTrack(_ track: LibraryTrack) {
         tagEditorStatus = "Reloading tags from file…"
         Task {
-            let metadata = await MetadataService().metadata(for: track.fileURL)
+            let metadata = await MetadataService().metadata(for: track.fileURL, useFilenameFallback: false)
             if let index = libraryTracks.firstIndex(where: { $0.id == track.id }) {
                 libraryTracks[index].metadata = metadata
                 tagEditorDraft = metadata
                 tagEditorStatus = "Reloaded tags from the audio file."
+                advanceTagReviewIfResolved()
             }
         }
     }
@@ -527,6 +545,7 @@ struct ContentView: View {
             }
             tagEditorDraft = updated
             tagEditorStatus = "Saved and verified successfully."
+            advanceTagReviewIfResolved()
         } catch {
             tagEditorStatus = "Save failed. DeckReady restored the original file from its safety backup."
             importer.lastError = error.localizedDescription
@@ -839,7 +858,7 @@ struct ContentView: View {
     }
 
     private func refreshMusicLibrary() {
-        guard let root = settings.libraryFolder else { return }
+        guard !isScanningLibrary, let root = settings.libraryFolder else { return }
         isScanningLibrary = true
         Task {
             var urls: [URL] = []
@@ -851,13 +870,13 @@ struct ContentView: View {
             let metadataService = MetadataService()
             var tracks: [LibraryTrack] = []
             for url in urls.sorted(by: { $0.path.localizedCaseInsensitiveCompare($1.path) == .orderedAscending }) {
-                tracks.append(LibraryTrack(fileURL: url, metadata: await metadataService.metadata(for: url)))
+                tracks.append(LibraryTrack(fileURL: url, metadata: await metadataService.metadata(for: url, useFilenameFallback: false)))
             }
             libraryTracks = tracks
-            if selectedSection == .tagEditor {
-                if let selected = tagEditorSelection, let match = tracks.first(where: { $0.id == selected }) {
+            if selectedSection == .tagEditor || selectedSection == .needsTagEditing {
+                if let selected = tagEditorSelection, let match = filteredLibraryTracks.first(where: { $0.id == selected }) {
                     selectTagEditorTrack(match)
-                } else if let first = tracks.first {
+                } else if let first = filteredLibraryTracks.first {
                     selectTagEditorTrack(first)
                 } else {
                     tagEditorSelection = nil
@@ -891,7 +910,7 @@ struct ContentView: View {
     private var filteredLibraryTracks: [LibraryTrack] {
         LibraryQuery(artist: artistFilter, genre: genreFilter, year: yearFilter, format: formatFilter,
             search: searchText, sort: LibrarySort(rawValue: librarySort) ?? .title,
-            ascending: libraryAscending).apply(to: libraryTracks)
+            ascending: libraryAscending).apply(to: selectedSection == .needsTagEditing ? libraryTracks.filter { $0.metadata.needsTagEditing } : libraryTracks)
     }
 
     private func libraryFilter(_ label: String, value: Binding<String>, options: [String]) -> some View {
@@ -956,7 +975,7 @@ struct ContentView: View {
         switch selectedSection {
         case .queue:
             return filteredQueue.map { previewEntry(url: $0.activeURL, title: $0.displayTitle, artist: $0.displayArtist, metadata: $0.metadata) }
-        case .musicLibrary, .tagEditor:
+        case .musicLibrary, .tagEditor, .needsTagEditing:
             return filteredLibraryTracks.map { previewEntry(url: $0.fileURL, title: $0.displayTitle, artist: $0.displayArtist, metadata: $0.metadata) }
         case .recent:
             return filteredRecent.map { previewEntry(url: $0.fileURL, title: $0.displayTitle, artist: $0.displayArtist, metadata: $0.metadata) }
@@ -988,6 +1007,7 @@ struct ContentView: View {
         case .queue: return "Import Queue"
         case .musicLibrary: return "Music Library"
         case .tagEditor: return "Tag Editor"
+        case .needsTagEditing: return "Needs Tag Editing"
         case .recent: return "Recent Imports"
         case .duplicates: return "Import Duplicates"
         case .seratoDuplicates: return "Serato Duplicate Checker"
@@ -999,6 +1019,7 @@ struct ContentView: View {
         case .queue: return settings.libraryFolder?.path ?? "Choose a music storage folder in Settings"
         case .musicLibrary: return "\(libraryTracks.count) song\(libraryTracks.count == 1 ? "" : "s") in your DeckReady music directory"
         case .tagEditor: return "Edit embedded song metadata directly from your DeckReady library"
+        case .needsTagEditing: return "Missing title, artist, album, genre or year. Select a track to fix its tags."
         case .recent: return "\(importer.recentImports.count) stored track\(importer.recentImports.count == 1 ? "" : "s")"
         case .duplicates: return "\(importer.duplicateHistory.count) exact import duplicate\(importer.duplicateHistory.count == 1 ? "" : "s") skipped"
         case .seratoDuplicates: return "Exact SHA-256 duplicates referenced by Serato crate files"
@@ -1009,7 +1030,7 @@ struct ContentView: View {
         switch selectedSection {
         case .queue: return !filteredQueue.isEmpty
         case .musicLibrary: return !filteredLibraryTracks.isEmpty
-        case .tagEditor: return false
+        case .tagEditor, .needsTagEditing: return false
         case .recent: return !filteredRecent.isEmpty
         case .duplicates: return !filteredDuplicates.isEmpty
         case .seratoDuplicates: return !filteredSeratoDuplicates.isEmpty
@@ -1078,7 +1099,7 @@ struct ContentView: View {
             return importer.items.first(where: { selectedKeys.contains(keyForQueue($0.id)) })?.activeURL
         case .musicLibrary:
             return libraryTracks.first(where: { selectedKeys.contains(keyForLibrary($0.id)) })?.fileURL
-        case .tagEditor:
+        case .tagEditor, .needsTagEditing:
             return selectedTagEditorTrack?.fileURL
         case .recent:
             return importer.recentImports.first(where: { selectedKeys.contains(keyForHistory($0.id, duplicate: false)) })?.fileURL
@@ -1100,7 +1121,7 @@ struct ContentView: View {
             if let track = libraryTracks.first(where: { selectedKeys.contains(keyForLibrary($0.id)) }) {
                 metadataDraft = track.metadata; editingTarget = .library(track.id)
             }
-        case .tagEditor:
+        case .tagEditor, .needsTagEditing:
             break
         case .recent:
             if let record = importer.recentImports.first(where: { selectedKeys.contains(keyForHistory($0.id, duplicate: false)) }) {

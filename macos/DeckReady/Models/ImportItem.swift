@@ -8,6 +8,16 @@ struct TrackMetadata: Hashable, Codable {
     var year: String
     var duration: TimeInterval
 
+    var missingFields: [String] {
+        [("Title", title), ("Artist", artist), ("Album", album), ("Genre", genre), ("Year", year)]
+            .filter { field, value in
+                let tag = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                return tag.isEmpty || tag == "unknown" || tag == "unknown " + field.lowercased()
+                    || (field == "Year" && tag.allSatisfy { $0 == "0" })
+            }.map { $0.0 }
+    }
+    var needsTagEditing: Bool { !missingFields.isEmpty }
+
     static let empty = TrackMetadata(title: "", artist: "", album: "", genre: "", year: "", duration: 0)
 }
 

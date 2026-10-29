@@ -31,7 +31,7 @@ jobs:
         run: |
           app='.dmg-cache/DerivedData/Build/Products/Release/DeckReady.app'
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist")" = '1.10.0'
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Contents/Info.plist")" = '12'
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Contents/Info.plist")" = '13'
           DECKREADY_NO_PAUSE=1 bash 'Build DeckReady DMG Fast.command' --package-only
       - name: Upload DMG and PKG
         uses: actions/upload-artifact@v4

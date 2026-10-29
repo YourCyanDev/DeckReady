@@ -2,7 +2,7 @@ import Foundation
 import AVFoundation
 
 struct MetadataService {
-    func metadata(for url: URL) async -> TrackMetadata {
+    func metadata(for url: URL, useFilenameFallback: Bool = true) async -> TrackMetadata {
         var metadata = TrackMetadata.empty
 
         // Read tags we can also safely write ourselves first. This keeps the
@@ -21,7 +21,7 @@ struct MetadataService {
         }
 
         await fillMissingMetadataUsingAVFoundation(url: url, metadata: &metadata)
-        applyFilenameFallback(url: url, metadata: &metadata)
+        if useFilenameFallback { applyFilenameFallback(url: url, metadata: &metadata) }
 
         metadata.title = clean(metadata.title)
         metadata.artist = clean(metadata.artist)
