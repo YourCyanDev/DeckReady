@@ -6,6 +6,7 @@
   <ItemGroup>
     <Compile Include="../../src/DeckReady.Windows/Models/*.cs" />
     <Compile Include="../../src/DeckReady.Windows/Services/CrateOrganization.cs" />
+    <Compile Include="../../src/DeckReady.Windows/Services/LibraryQuery.cs" />
     <Compile Include="../../src/DeckReady.Windows/Services/ImportService.cs" />
     <Compile Include="../../src/DeckReady.Windows/Services/MetadataService.cs" />
     <Compile Include="../../src/DeckReady.Windows/Services/LogService.cs" />

@@ -1,4 +1,36 @@
-# Unreleased
+# Windows a1.10.0 - build 2
+
+- Prevent grid inline editing of read-only display properties. All track-list text columns are read-only with OneWay bindings; selection checkboxes and dedicated tag inputs remain editable.
+- Defer library double-click navigation until after the grid mouse event completes.
+- Add a rendered-grid regression that reproduces the read-only binding exception in the previous XAML, then verifies the corrected grid and double-click route.
+- Add best-effort crash reports at `%LOCALAPPDATA%\DeckReady\CrashReports\crash-latest.txt` and a visible Windows build 2 label. Public and MSI version remain a1.10.0 / 1.10.0.
+
+# Windows a1.10.0
+
+- Library double-click now opens the embedded tag editor; header double-clicks do not launch editing. Other metadata dialogs report errors instead of closing the app.
+- Installer artwork is regenerated from the build release label; removed the stale a1.07.0 artwork from the packaging path.
+
+- Added Needs Tag Editing in the sidebar, with a count, missing field labels, and the existing tag editor. Checks embedded title, artist, album, genre and year, including blank/Unknown values and zero years. Refresh scans all music in the configured library. Tracks leave the view when their tags are completed. No audio is moved or automatically retagged. This view is independent of the additive Serato review crate.
+
+# Windows a1.10.0
+
+- Library double-click now opens the embedded tag editor; header double-clicks do not launch editing. Other metadata dialogs report errors instead of closing the app.
+- Installer artwork is regenerated from the build release label; removed the stale a1.07.0 artwork from the packaging path.
+
+- Added Organize Library: scan all audio in the configured music folder, including songs DeckReady never imported, and add references to the selected crates. Audio files remain in place; no copying, moving, renaming or tag writes occur.
+- Added Artist, Genre, Year and Format filters, search, seven Sort by categories, and ascending/descending order. Filters do not limit Organize Library.
+- Preview track/crate counts before updating; close Serato safely before writes and preserve existing crate contents.
+
+# DeckReady Windows a1.09.3
+
+- Preserve the existing a1.09.1 Serato restart-reminder preference, including the Don’t show again checkbox.
+- Preserve the existing behavior of only reopening Serato after DeckReady closed a running instance.
+- Includes both nested crate options, Add more / Remove and need tag editing.
+- Numeric app/MSI version 1.9.3.
+
+# DeckReady Windows a1.09.2
+
+- Raised Windows app and MSI versions to **a1.09.2 / 1.9.2**, so this build upgrades older 1.8.x and 1.9.1 installations. Updated local build scripts and CI output names to match.
 
 - Added **Add more** / **Remove** organization controls. Year/artist and genre/artist crates can be enabled together; the first option controls file storage, and all selected structures reference the same audio files. Selections persist between sessions.
 

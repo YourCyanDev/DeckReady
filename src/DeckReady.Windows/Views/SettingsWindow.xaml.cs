@@ -48,6 +48,7 @@ public partial class SettingsWindow : Window
         WriteTagsCheck.IsChecked = settings.WriteMetadataToFiles;
         DeleteContainerCheck.IsChecked = settings.DeleteSourceContainerAfterImport;
         AutoSeratoCheck.IsChecked = settings.AutomaticSeratoImport;
+        ShowSeratoRestartPromptCheck.IsChecked = settings.ShowSeratoRestartPrompt;
 
         PreferredSeratoBox.ItemsSource = new[] { "Serato DJ Pro", "Serato DJ Lite" };
         PreferredSeratoBox.SelectedIndex = settings.PreferredSeratoApp == SeratoAppPreference.Lite ? 1 : 0;
@@ -146,22 +147,26 @@ public partial class SettingsWindow : Window
             SeratoDetectionText.Text = "Detected Serato DJ Pro and Serato DJ Lite.";
             PreferredSeratoBox.IsEnabled = launchEnabled;
             PreferredSeratoHelpText.Text = launchEnabled
-                ? "Choose which Serato app DeckReady opens after a successful sync."
-                : "Turn on “Open Serato when sync is complete” to choose Pro or Lite.";
+                ? "Choose which Serato app DeckReady reopens after it closes Serato for a safe crate update."
+                : "Turn on “Reopen Serato after DeckReady closes it” to choose Pro or Lite.";
         }
         else if (pro)
         {
             SeratoDetectionText.Text = "Detected Serato DJ Pro.";
             PreferredSeratoBox.SelectedIndex = 0;
             PreferredSeratoBox.IsEnabled = false;
-            PreferredSeratoHelpText.Text = "Only Serato DJ Pro is installed, so DeckReady will use it automatically.";
+            PreferredSeratoHelpText.Text = launchEnabled
+                ? "Only Serato DJ Pro is installed, so DeckReady will reopen it when needed."
+                : "Only Serato DJ Pro is installed. Automatic reopening is disabled.";
         }
         else if (lite)
         {
             SeratoDetectionText.Text = "Detected Serato DJ Lite.";
             PreferredSeratoBox.SelectedIndex = 1;
             PreferredSeratoBox.IsEnabled = false;
-            PreferredSeratoHelpText.Text = "Only Serato DJ Lite is installed, so DeckReady will use it automatically.";
+            PreferredSeratoHelpText.Text = launchEnabled
+                ? "Only Serato DJ Lite is installed, so DeckReady will reopen it when needed."
+                : "Only Serato DJ Lite is installed. Automatic reopening is disabled.";
         }
         else
         {
@@ -202,6 +207,7 @@ public partial class SettingsWindow : Window
         _settings.WriteMetadataToFiles = WriteTagsCheck.IsChecked == true;
         _settings.DeleteSourceContainerAfterImport = DeleteContainerCheck.IsChecked == true;
         _settings.AutomaticSeratoImport = AutoSeratoCheck.IsChecked == true;
+        _settings.ShowSeratoRestartPrompt = ShowSeratoRestartPromptCheck.IsChecked == true;
         _settings.LaunchSeratoWhenNeeded = LaunchSeratoCheck.IsChecked == true;
         _settings.PreferredSeratoApp = PreferredSeratoBox.SelectedIndex == 1
             ? SeratoAppPreference.Lite

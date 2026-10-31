@@ -28,10 +28,17 @@ public partial class MainWindow : Window
     private readonly AudioPreviewService _audioPreview = new();
     private AppSettings _settings;
     private readonly HashSet<string> _tempExtractionRoots = new(StringComparer.OrdinalIgnoreCase);
+    // Tracks that were deferred specifically because Serato was already open.
+    // Only these paths are eligible for an automatic reopen after DeckReady closes Serato.
+    private readonly HashSet<string> _pendingSeratoReopenPaths = new(StringComparer.OrdinalIgnoreCase);
     private readonly SemaphoreSlim _autoImportGate = new(1, 1);
     private readonly AutoImportStateStore _autoImportState = new();
     private AutoImportWatcher? _autoImportWatcher;
     private bool _selectionMode;
+    private bool _libraryOperationBusy;
+    private int _visibleLibraryCount;
+    private bool _updatingLibraryFilters;
+    private bool _tagEditorNavigationPending;
     private AppPage _currentPage = AppPage.Queue;
 
     private enum AppPage
@@ -39,6 +46,7 @@ public partial class MainWindow : Window
         Queue,
         Library,
         TagEditor,
+        NeedsTagEditing,
         Recent,
         ImportDuplicates,
         SeratoDuplicates
@@ -56,6 +64,7 @@ public partial class MainWindow : Window
         _seratoDuplicateScanner = new SeratoDuplicateScanner(_metadata, _log);
         _audioPreview.StateChanged += (_, _) => Dispatcher.BeginInvoke(new Action(UpdateNowPlaying));
 
+        InitializeLibraryFilters();
         RefreshHistoryCollections();
         ShowQueuePage();
         ConfigureAutoImportWatcher();
@@ -213,7 +222,7 @@ public partial class MainWindow : Window
 
     private async Task ImportItemsAsync(List<ImportItem> ready, bool interactive)
     {
-        if (ready.Count == 0) return;
+        if (ready.Count == 0 || _libraryOperationBusy) return;
 
         if (string.IsNullOrWhiteSpace(_settings.LibraryFolder))
         {
@@ -229,6 +238,7 @@ public partial class MainWindow : Window
             return;
         }
 
+        _libraryOperationBusy = true;
         ImportReadyButton.IsEnabled = false;
         try
         {
@@ -292,6 +302,7 @@ public partial class MainWindow : Window
         }
         finally
         {
+            _libraryOperationBusy = false;
             ImportReadyButton.IsEnabled = QueueItems.Any(x => x.State == ImportState.Ready);
         }
     }
@@ -301,9 +312,35 @@ public partial class MainWindow : Window
         _serato.RefreshStatus();
         if (_serato.IsRunning)
         {
+            foreach (var path in paths)
+                _pendingSeratoReopenPaths.Add(path);
+
             MarkWaitingForSerato(paths);
+            if (!_settings.ShowSeratoRestartPrompt)
+            {
+                RefreshUI();
+                return;
+            }
+
             var dialog = new SeratoRestartDialog { Owner = this };
             dialog.ShowDialog();
+
+            // Remember the checkbox for Later, Quit & Reopen, and the close button.
+            if (dialog.DontShowAgain)
+            {
+                _settings.ShowSeratoRestartPrompt = false;
+                try
+                {
+                    _settingsService.Save(_settings);
+                }
+                catch (Exception ex)
+                {
+                    _log.Error($"Could not save the Serato restart reminder preference: {ex.Message}");
+                    MessageBox.Show(this,
+                        "The reminder is hidden for this session, but DeckReady could not save that preference. You can try saving it again in Settings.",
+                        "Settings Could Not Be Saved", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
 
             if (dialog.RestartRequested)
             {
@@ -317,12 +354,16 @@ public partial class MainWindow : Window
                     return;
                 }
 
-                await CompleteSeratoSyncAsync(paths, reopen: true);
+                await CompleteSeratoSyncAsync(paths, reopen: _settings.LaunchSeratoWhenNeeded);
             }
             return;
         }
 
-        await CompleteSeratoSyncAsync(paths, reopen: _settings.LaunchSeratoWhenNeeded);
+        // Serato was already closed when this sync started, so leave it closed.
+        foreach (var path in paths)
+            _pendingSeratoReopenPaths.Remove(path);
+
+        await CompleteSeratoSyncAsync(paths, reopen: false);
     }
 
     private async Task CompleteSeratoSyncAsync(List<string> paths, bool reopen)
@@ -355,6 +396,8 @@ public partial class MainWindow : Window
             }
 
             var reopened = !reopen || _serato.Launch(_settings.PreferredSeratoApp);
+            foreach (var path in paths)
+                _pendingSeratoReopenPaths.Remove(path);
             MessageBox.Show(this,
                 $"{paths.Count} track{(paths.Count == 1 ? "" : "s")} synced to “{syncTarget}”."
                 + (reopen ? $"\n\nSerato {(reopened ? "was reopened." : "could not be reopened automatically.")}" : ""),
@@ -399,7 +442,9 @@ public partial class MainWindow : Window
             return;
         }
 
-        await CompleteSeratoSyncAsync(pending, reopen: _settings.LaunchSeratoWhenNeeded);
+        var shouldReopen = _settings.LaunchSeratoWhenNeeded
+            && pending.Any(path => _pendingSeratoReopenPaths.Contains(path));
+        await CompleteSeratoSyncAsync(pending, reopen: shouldReopen);
     }
 
     private void CleanupSuccessfulSources(IReadOnlyCollection<ImportItem> processed)
@@ -516,9 +561,19 @@ public partial class MainWindow : Window
 
     private void LibraryGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
-        if (_selectionMode) return;
-        if (LibraryGrid.SelectedItem is LibraryTrack track)
-            EditLibraryTrack(track);
+        if (_selectionMode || _tagEditorNavigationPending || e.ChangedButton != MouseButton.Left) return;
+        // Header/scrollbar double-clicks must not edit a previously selected song.
+        if (e.OriginalSource is not DependencyObject source ||
+            System.Windows.Controls.ItemsControl.ContainerFromElement(LibraryGrid, source)
+                is not System.Windows.Controls.DataGridRow row || row.Item is not LibraryTrack track) return;
+        e.Handled = true;
+        _tagEditorNavigationPending = true;
+        // Let the grid finish processing the mouse event before changing its page/selection.
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle, new Action(() =>
+        {
+            try { EditLibraryTrack(track); }
+            finally { _tagEditorNavigationPending = false; }
+        }));
     }
 
     private void RecentGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -556,7 +611,24 @@ public partial class MainWindow : Window
 
     private void EditLibraryTrack(LibraryTrack track)
     {
-        EditTrack(track.FilePath, track.Metadata, metadata => track.Metadata = metadata);
+        // Open the clicked library track in the embedded editor.
+        try
+        {
+            if (!File.Exists(track.FilePath))
+            {
+                MessageBox.Show(this, "That audio file can no longer be found. Refresh the library to update the list.", "DeckReady", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            ShowTagEditorPage();
+            TagEditorGrid.SelectedItem = track;
+            LoadSelectedTagEditorTrack();
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Record("Open library tag editor", ex);
+            _log.Error($"Could not open library tag editor: {ex}");
+            MessageBox.Show(this, $"DeckReady could not open that track for editing.\n\n{ex.Message}", "Tag Editor", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void EditTrack(string path, TrackMetadata metadata, Action<TrackMetadata> apply)
@@ -567,9 +639,18 @@ public partial class MainWindow : Window
             return;
         }
 
-        var editor = new MetadataEditorWindow(path, metadata, _metadata) { Owner = this };
-        if (editor.ShowDialog() == true)
-            apply(editor.Result);
+        try
+        {
+            var editor = new MetadataEditorWindow(path, metadata, _metadata) { Owner = this };
+            if (editor.ShowDialog() == true) apply(editor.Result);
+            RefreshTagReview();
+            ApplyLibraryFilters();
+        }
+        catch (Exception ex)
+        {
+            _log.Error($"Could not open metadata editor: {ex}");
+            MessageBox.Show(this, $"DeckReady could not open the metadata editor.\n\n{ex.Message}", "Metadata Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettings();
@@ -584,7 +665,7 @@ public partial class MainWindow : Window
             RefreshUI();
             if (_settings.AutoImportEnabled)
                 _ = ScanAutoImportFolderAsync();
-            if (_currentPage is AppPage.Library or AppPage.TagEditor)
+            if (_currentPage is AppPage.Library or AppPage.TagEditor or AppPage.NeedsTagEditing)
                 _ = RefreshLibraryAsync();
         }
     }
@@ -619,6 +700,31 @@ public partial class MainWindow : Window
         if (TagEditorGrid.SelectedItem is null && LibraryItems.Count > 0)
             TagEditorGrid.SelectedIndex = 0;
     }
+    private async void NeedsTagsNav_Click(object sender, RoutedEventArgs e)
+    {
+        ShowTagEditorPage(needsTags: true);
+        await RefreshLibraryAsync();
+    }
+
+    private void RefreshTagReview()
+    {
+        var selected = SelectedTagEditorTrack?.FilePath;
+        var needsTags = _currentPage == AppPage.NeedsTagEditing;
+        var missing = LibraryItems.Where(x => x.Metadata.NeedsTagEditing).ToList();
+        NeedsTagsNavButton.Content = $"⚠  Needs Tag Editing ({missing.Count})";
+        MissingTagsColumn.Visibility = needsTags ? Visibility.Visible : Visibility.Collapsed;
+        var rows = needsTags ? missing : LibraryItems.ToList();
+        TagEditorGrid.ItemsSource = rows;
+        TagEditorGrid.SelectedItem = rows.FirstOrDefault(x => x.FilePath == selected) ?? rows.FirstOrDefault();
+        if (needsTags)
+        {
+            PageSubtitleText.Text = missing.Count == 0
+                ? "No missing tags found. All scanned tracks have title, artist, album, genre and year."
+                : $"{missing.Count} tracks need title, artist, album, genre or year. Select a track to fix its tags.";
+            SummaryText.Text = $"{missing.Count} tracks need tag editing";
+        }
+    }
+
     private void RecentNav_Click(object sender, RoutedEventArgs e) => ShowRecentPage();
     private void DuplicatesNav_Click(object sender, RoutedEventArgs e) => ShowDuplicatesPage();
     private void SeratoDuplicatesNav_Click(object sender, RoutedEventArgs e) => ShowSeratoDuplicatesPage();
@@ -645,14 +751,15 @@ public partial class MainWindow : Window
         RefreshSelectionUI();
     }
 
-    private void ShowTagEditorPage()
+    private void ShowTagEditorPage(bool needsTags = false)
     {
-        _currentPage = AppPage.TagEditor;
+        _currentPage = needsTags ? AppPage.NeedsTagEditing : AppPage.TagEditor;
         _selectionMode = false;
         ClearAllSelections();
-        SetNavSelection(TagEditorNavButton);
+        SetNavSelection(needsTags ? NeedsTagsNavButton : TagEditorNavButton);
         SetPageVisibility(TagEditorPage);
-        PageTitleText.Text = "Tag Editor";
+        PageTitleText.Text = needsTags ? "Needs Tag Editing" : "Tag Editor";
+        RefreshTagReview();
         PageSubtitleText.Text = "Edit a track's title, artist, album, genre, and year without leaving DeckReady.";
         RefreshHeaderActions();
         RefreshSelectionUI();
@@ -699,7 +806,7 @@ public partial class MainWindow : Window
 
     private void SetNavSelection(System.Windows.Controls.Button active)
     {
-        foreach (var button in new[] { QueueNavButton, LibraryNavButton, TagEditorNavButton, RecentNavButton, DuplicatesNavButton, SeratoDuplicatesNavButton })
+        foreach (var button in new[] { QueueNavButton, LibraryNavButton, TagEditorNavButton, NeedsTagsNavButton, RecentNavButton, DuplicatesNavButton, SeratoDuplicatesNavButton })
         {
             button.ClearValue(System.Windows.Controls.Control.BackgroundProperty);
             button.ClearValue(System.Windows.Controls.Control.ForegroundProperty);
@@ -713,12 +820,13 @@ public partial class MainWindow : Window
     {
         var queue = _currentPage == AppPage.Queue;
         var library = _currentPage == AppPage.Library;
-        var tagEditor = _currentPage == AppPage.TagEditor;
+        var tagEditor = _currentPage is AppPage.TagEditor or AppPage.NeedsTagEditing;
         var seratoDuplicates = _currentPage == AppPage.SeratoDuplicates;
 
         AddMusicButton.Visibility = queue ? Visibility.Visible : Visibility.Collapsed;
         AddFolderButton.Visibility = queue ? Visibility.Visible : Visibility.Collapsed;
         ClearFinishedButton.Visibility = queue ? Visibility.Visible : Visibility.Collapsed;
+        OrganizeLibraryButton.Visibility = library ? Visibility.Visible : Visibility.Collapsed;
         RefreshLibraryButton.Visibility = library ? Visibility.Visible : Visibility.Collapsed;
         PlayPauseButton.Visibility = library ? Visibility.Visible : Visibility.Collapsed;
         EditTagsButton.Visibility = library ? Visibility.Visible : Visibility.Collapsed;
@@ -726,11 +834,111 @@ public partial class MainWindow : Window
         SelectModeButton.Visibility = tagEditor ? Visibility.Collapsed : Visibility.Visible;
     }
 
+    private void InitializeLibraryFilters()
+    {
+        LibrarySortBox.ItemsSource = Enum.GetValues<LibrarySort>();
+        LibrarySortBox.SelectedIndex = 0;
+        RefreshLibraryFilterOptions();
+    }
+
+    private void RefreshLibraryFilterOptions()
+    {
+        _updatingLibraryFilters = true;
+        void Fill(System.Windows.Controls.ComboBox box, IEnumerable<string> values)
+        {
+            var selected = box.SelectedItem as string ?? "All";
+            var choices = new[] { "All" }.Concat(values.Distinct().OrderBy(x => x, StringComparer.OrdinalIgnoreCase)).ToArray();
+            box.ItemsSource = choices;
+            box.SelectedItem = choices.Contains(selected) ? selected : "All";
+        }
+        Fill(LibraryArtistFilter, LibraryItems.Select(x => LibraryQuery.Tag(x.Metadata.Artist)));
+        Fill(LibraryGenreFilter, LibraryItems.Select(x => LibraryQuery.Tag(x.Metadata.Genre)));
+        Fill(LibraryYearFilter, LibraryItems.Select(x => LibraryQuery.Tag(x.Metadata.Year)));
+        Fill(LibraryFormatFilter, LibraryItems.Select(x => x.Format));
+        _updatingLibraryFilters = false;
+        ApplyLibraryFilters();
+    }
+
+    private void ApplyLibraryFilters()
+    {
+        if (!IsInitialized || _updatingLibraryFilters || LibrarySortBox is null || LibrarySearchBox is null) return;
+        string Filter(System.Windows.Controls.ComboBox box) => box.SelectedIndex <= 0 ? "" : box.SelectedItem as string ?? "";
+        var query = new LibraryQuery { Artist = Filter(LibraryArtistFilter), Genre = Filter(LibraryGenreFilter),
+            Year = Filter(LibraryYearFilter), Format = Filter(LibraryFormatFilter), Search = LibrarySearchBox.Text,
+            Sort = LibrarySortBox.SelectedItem is LibrarySort sort ? sort : LibrarySort.Title,
+            Ascending = LibraryDescendingCheck.IsChecked != true };
+        var visible = query.Apply(LibraryItems);
+        LibraryGrid.ItemsSource = visible;
+        _visibleLibraryCount = visible.Count;
+        if (_currentPage == AppPage.Library) SummaryText.Text = $"{visible.Count} of {LibraryItems.Count} library tracks";
+    }
+    private void LibraryFilter_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e) => ApplyLibraryFilters();
+    private void LibraryOrder_Changed(object sender, RoutedEventArgs e) => ApplyLibraryFilters();
+    private void LibrarySearch_Changed(object sender, System.Windows.Controls.TextChangedEventArgs e) => ApplyLibraryFilters();
+    private void ClearLibraryFilters_Click(object sender, RoutedEventArgs e)
+    {
+        _updatingLibraryFilters = true;
+        foreach (var box in new[] { LibraryArtistFilter, LibraryGenreFilter, LibraryYearFilter, LibraryFormatFilter }) box.SelectedIndex = 0;
+        LibrarySearchBox.Text = "";
+        _updatingLibraryFilters = false;
+        ApplyLibraryFilters();
+    }
+
+    private async void OrganizeLibrary_Click(object sender, RoutedEventArgs e)
+    {
+        if (_libraryOperationBusy || !await _autoImportGate.WaitAsync(0)) return;
+        _libraryOperationBusy = true;
+        OrganizeLibraryButton.IsEnabled = false;
+        RefreshLibraryButton.IsEnabled = false;
+        var root = _settings.LibraryFolder;
+        var modes = new[] { _settings.OrganizationMode }.Concat(_settings.AdditionalOrganizationModes ?? new()).Distinct().ToArray();
+        var crateName = _settings.SeratoCrateName;
+        try
+        {
+            var paths = await Task.Run(() => LibraryCrateScan.Discover(root));
+            if (paths.Count == 0) { MessageBox.Show(this, "No supported audio files were found in the music library.", "Organize Library"); return; }
+            var tracks = new List<(string Path, TrackMetadata Metadata)>();
+            foreach (var path in paths)
+            {
+                PageSubtitleText.Text = $"Reading library tags: {tracks.Count + 1} of {paths.Count}...";
+                var tags = await Task.Run(() => { try { return _metadata.Read(path); } catch { return new TrackMetadata(); } });
+                tracks.Add((path, tags));
+            }
+            var plan = CrateOrganization.Plan(tracks, modes, crateName);
+            var review = plan.TryGetValue("need tag editing", out var missing) ? missing.Count : 0;
+            if (MessageBox.Show(this, $"Add {tracks.Count} songs from {root} to {plan.Count} crates?\n\nNeed tag editing: {review}\n\nAudio files stay in place. Existing crate tracks are retained. This processes the full folder, including tracks DeckReady never imported, regardless of active filters.",
+                "Organize Library", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+            _serato.RefreshStatus();
+            var wasRunning = _serato.IsRunning;
+            if (wasRunning)
+            {
+                if (MessageBox.Show(this, "Serato must be closed to update crates. Quit Serato and organize the library now?", "Organize Library", MessageBoxButton.OKCancel) != MessageBoxResult.OK) return;
+                if (!await _serato.QuitAndWaitAsync()) throw new IOException("Serato is still open. Close it and try Organize Library again.");
+            }
+            await Task.Run(() => _serato.SyncOrganizedCrates(tracks, modes, crateName));
+            _historyStore.UpdateSeratoSynced(paths);
+            if (wasRunning && _settings.LaunchSeratoWhenNeeded) _serato.Launch(_settings.PreferredSeratoApp);
+            _log.Info($"Organized {tracks.Count} existing songs into {plan.Count} crates without changing audio files.");
+            MessageBox.Show(this, $"Organized {tracks.Count} existing songs into {plan.Count} crates. Audio files were left in place.", "Library Organized");
+        }
+        catch (Exception ex) { MessageBox.Show(this, ex.Message, "Could Not Organize Library", MessageBoxButton.OK, MessageBoxImage.Error); }
+        finally
+        {
+            _libraryOperationBusy = false;
+            _autoImportGate.Release();
+            OrganizeLibraryButton.IsEnabled = true;
+            RefreshLibraryButton.IsEnabled = true;
+            PageSubtitleText.Text = $"{LibraryItems.Count} tracks • {root}";
+            RefreshUI();
+        }
+    }
+
     private async void RefreshLibrary_Click(object sender, RoutedEventArgs e) => await RefreshLibraryAsync();
 
     private async Task RefreshLibraryAsync()
     {
         LibraryItems.Clear();
+        RefreshTagReview();
         if (string.IsNullOrWhiteSpace(_settings.LibraryFolder) || !Directory.Exists(_settings.LibraryFolder))
         {
             PageSubtitleText.Text = "Choose or create a music storage folder in Settings first.";
@@ -748,15 +956,17 @@ public partial class MainWindow : Window
         {
             TrackMetadata metadata;
             try { metadata = await Task.Run(() => _metadata.Read(path)); }
-            catch { metadata = new TrackMetadata { Title = Path.GetFileNameWithoutExtension(path) }; }
+            catch { metadata = new TrackMetadata(); }
             LibraryItems.Add(new LibraryTrack { FilePath = path, Metadata = metadata });
         }
 
+        RefreshLibraryFilterOptions();
         PageSubtitleText.Text = _currentPage == AppPage.TagEditor
             ? $"{LibraryItems.Count} tracks available for tag editing"
             : $"{LibraryItems.Count} tracks • {_settings.LibraryFolder}";
         if (_currentPage == AppPage.TagEditor && TagEditorGrid.SelectedItem is null && LibraryItems.Count > 0)
             TagEditorGrid.SelectedIndex = 0;
+        RefreshTagReview();
         RefreshUI();
     }
 
@@ -835,7 +1045,9 @@ public partial class MainWindow : Window
             TagEditorStatusText.Text = "Saving tags and verifying the audio file...";
             _metadata.WriteWithSafetyBackup(track.FilePath, updated);
             track.Metadata = _metadata.Read(track.FilePath);
+            RefreshTagReview();
             LoadSelectedTagEditorTrack();
+            ApplyLibraryFilters();
             TagEditorStatusText.Text = "Saved and verified successfully.";
             RefreshUI();
         }
@@ -846,7 +1058,7 @@ public partial class MainWindow : Window
         }
         finally
         {
-            TagEditorSaveButton.IsEnabled = true;
+            TagEditorSaveButton.IsEnabled = SelectedTagEditorTrack is { } selected && File.Exists(selected.FilePath);
         }
     }
 
@@ -857,7 +1069,9 @@ public partial class MainWindow : Window
         try
         {
             track.Metadata = _metadata.Read(track.FilePath);
+            RefreshTagReview();
             LoadSelectedTagEditorTrack();
+            ApplyLibraryFilters();
             TagEditorStatusText.Text = "Reloaded tags from the audio file.";
         }
         catch (Exception ex)
@@ -1183,7 +1397,8 @@ public partial class MainWindow : Window
 
         SummaryText.Text = _currentPage switch
         {
-            AppPage.Library => $"{LibraryItems.Count} library tracks",
+            AppPage.Library => $"{_visibleLibraryCount} of {LibraryItems.Count} library tracks",
+            AppPage.NeedsTagEditing => $"{LibraryItems.Count(x => x.Metadata.NeedsTagEditing)} tracks need tag editing",
             AppPage.TagEditor => $"{LibraryItems.Count} tracks available for tag editing",
             AppPage.Recent => $"{RecentItems.Count} recent imports",
             AppPage.ImportDuplicates => $"{DuplicateItems.Count} import duplicates",
@@ -1399,7 +1614,7 @@ public partial class MainWindow : Window
     private void About_Click(object sender, RoutedEventArgs e)
     {
         MessageBox.Show(this,
-            "DeckReady for Windows\nAlpha a1.08.0\n\nOrganize. Prepare. Play.\n\nIncludes Music Library browsing, song selection tools, the Serato duplicate checker, DeckReady Inbox automation, and community/support links in the Help menu.",
+            "DeckReady for Windows\nAlpha a1.10.0 (Windows build 2)\n\nOrganize. Prepare. Play.\n\nIncludes Music Library browsing, song selection tools, the Serato duplicate checker, DeckReady Inbox automation, and community/support links in the Help menu.",
             "About DeckReady", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 

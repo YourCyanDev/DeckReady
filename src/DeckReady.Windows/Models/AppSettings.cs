@@ -33,6 +33,9 @@ public sealed class AppSettings
     public OrganizationMode OrganizationMode { get; set; } = OrganizationMode.NoSubfolders;
     public List<OrganizationMode> AdditionalOrganizationModes { get; set; } = new();
     public bool AutomaticSeratoImport { get; set; } = true;
+    public bool ShowSeratoRestartPrompt { get; set; } = true;
+    // Legacy property name retained so existing settings.json files stay compatible.
+    // a1.10.0+: this only controls reopening Serato after DeckReady had to close a running Serato instance.
     public bool LaunchSeratoWhenNeeded { get; set; } = true;
     public SeratoAppPreference PreferredSeratoApp { get; set; } = SeratoAppPreference.Pro;
     public bool WriteMetadataToFiles { get; set; } = true;

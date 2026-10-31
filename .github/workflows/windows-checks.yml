@@ -12,10 +12,28 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
       - name: Build Windows app
         run: dotnet build src/DeckReady.Windows/DeckReady.Windows.csproj -c Release
+      - name: Reproduce previous-build grid crash
+        shell: pwsh
+        run: |
+          $path = 'src/DeckReady.Windows/MainWindow.xaml'
+          $fixed = [IO.File]::ReadAllText($path)
+          try {
+            $legacy = git show 1d9c5e55ef96ff00665aa70fe917e1c61d9ccad9:src/DeckReady.Windows/MainWindow.xaml
+            if ($LASTEXITCODE -ne 0) { throw 'Could not load previous-build XAML' }
+            [IO.File]::WriteAllText($path, ($legacy -join "`n"))
+            dotnet run --project tests/DeckReady.UI.Tests/DeckReady.UI.Tests.csproj -c Release -- --reproduce-legacy-inline-edit
+            if ($LASTEXITCODE -ne 0) { throw 'Previous-build crash reproduction did not pass' }
+          } finally {
+            [IO.File]::WriteAllText($path, $fixed)
+          }
+      - name: WPF library open and tag review smoke checks
+        run: dotnet run --project tests/DeckReady.UI.Tests/DeckReady.UI.Tests.csproj -c Release
       - name: Test organization and import regressions
         run: dotnet run --project tests/DeckReady.Organization.Tests/DeckReady.Organization.Tests.csproj -c Release

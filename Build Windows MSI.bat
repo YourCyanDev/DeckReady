@@ -2,13 +2,11 @@
 setlocal EnableExtensions
 cd /d "%~dp0"
 
-rem DeckReady Windows a1.08.0 - MSI Builder Revision 12
-rem Revision 10 adds a branded WixUI setup wizard and uses internal MSI version 1.8.0 while keeping
-rem the public DeckReady release label a1.08.0. This guarantees Windows Installer
-rem treats Rev9 as a real upgrade from earlier 1.7.0 test MSIs instead of entering
-rem same-version maintenance/configuration.
-set "RELEASE_LABEL=a1.08.0"
-set "NUMERIC_VERSION=1.8.0"
+rem DeckReady Windows a1.10.0 - MSI Builder Revision 13
+rem Numeric MSI version must increase when packaging a new public release.
+rem This build upgrades the previous 1.8.x and 1.9.1 installers.
+set "RELEASE_LABEL=a1.10.0"
+set "NUMERIC_VERSION=1.10.0"
 set "Version="
 
 set "PUBLISH_DIR=%CD%\release\win-x64"
@@ -160,6 +158,6 @@ exit /b 1
 :failed
 echo.
 echo ERROR: DeckReady Windows MSI packaging failed.
-echo This is Builder Revision 10. The exact failure is shown above.
+echo This is Builder Revision 13. The exact failure is shown above.
 pause
 exit /b 1
