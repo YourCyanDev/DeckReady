@@ -1,7 +1,7 @@
 <Window x:Class="DeckReady.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="DeckReady — Windows Alpha a1.10.0"
+        Title="DeckReady — Windows Alpha a1.10.0 (Windows build 2)"
         Height="790" Width="1240" MinHeight="650" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Style="{StaticResource DeckReadyWindow}"
@@ -51,7 +51,7 @@
                         <TextBlock x:Name="SeratoStatusText" Text="Checking..." Margin="6,2,0,8" TextWrapping="Wrap"/>
                         <Button Content="Launch Serato" Click="LaunchSerato_Click" Margin="6,0"/>
                         <TextBlock Text="DeckReady Windows" Foreground="{StaticResource MutedTextBrush}" FontSize="11" Margin="6,18,0,0"/>
-                        <TextBlock Text="Alpha a1.10.0" Foreground="{StaticResource MutedTextBrush}" FontSize="11" Margin="6,2,0,0"/>
+                        <TextBlock Text="Alpha a1.10.0 • Windows build 2" Foreground="{StaticResource MutedTextBrush}" FontSize="11" Margin="6,2,0,0"/>
                     </StackPanel>
 
                     <StackPanel>
@@ -125,12 +125,12 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="Title" Binding="{Binding DisplayTitle}" Width="2*"/>
-                                <DataGridTextColumn Header="Artist" Binding="{Binding DisplayArtist}" Width="1.5*"/>
-                                <DataGridTextColumn Header="Format" Binding="{Binding Format}" Width="75"/>
-                                <DataGridTextColumn Header="Length" Binding="{Binding DurationText}" Width="75"/>
-                                <DataGridTextColumn Header="State" Binding="{Binding StateText}" Width="120"/>
-                                <DataGridTextColumn Header="Status" Binding="{Binding StatusMessage}" Width="2*"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Title" Binding="{Binding DisplayTitle, Mode=OneWay}" Width="2*"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Artist" Binding="{Binding DisplayArtist, Mode=OneWay}" Width="1.5*"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Format" Binding="{Binding Format, Mode=OneWay}" Width="75"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Length" Binding="{Binding DurationText, Mode=OneWay}" Width="75"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="State" Binding="{Binding StateText, Mode=OneWay}" Width="120"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Status" Binding="{Binding StatusMessage, Mode=OneWay}" Width="2*"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>
@@ -162,12 +162,12 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="Title" Binding="{Binding DisplayTitle}" Width="2*"/>
-                                <DataGridTextColumn Header="Artist" Binding="{Binding DisplayArtist}" Width="1.5*"/>
-                                <DataGridTextColumn Header="Album" Binding="{Binding Album}" Width="1.4*"/>
-                                <DataGridTextColumn Header="Format" Binding="{Binding Format}" Width="75"/>
-                                <DataGridTextColumn Header="Length" Binding="{Binding DurationText}" Width="75"/>
-                                <DataGridTextColumn Header="Path" Binding="{Binding FilePath}" Width="2.5*"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Title" Binding="{Binding DisplayTitle, Mode=OneWay}" Width="2*"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Artist" Binding="{Binding DisplayArtist, Mode=OneWay}" Width="1.5*"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Album" Binding="{Binding Album, Mode=OneWay}" Width="1.4*"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Format" Binding="{Binding Format, Mode=OneWay}" Width="75"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Length" Binding="{Binding DurationText, Mode=OneWay}" Width="75"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Path" Binding="{Binding FilePath, Mode=OneWay}" Width="2.5*"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>
@@ -199,11 +199,11 @@
                                 <DataGrid Grid.Row="1" x:Name="TagEditorGrid" ItemsSource="{Binding LibraryItems}"
                                           SelectionChanged="TagEditorGrid_SelectionChanged">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Title" Binding="{Binding DisplayTitle}" Width="1.7*"/>
-                                        <DataGridTextColumn Header="Artist" Binding="{Binding DisplayArtist}" Width="1.35*"/>
-                                        <DataGridTextColumn Header="Album" Binding="{Binding Album}" Width="1.2*"/>
-                                        <DataGridTextColumn x:Name="MissingTagsColumn" Header="Missing tags" Binding="{Binding MissingTags}" Width="1.5*" Visibility="Collapsed"/>
-                                        <DataGridTextColumn Header="Format" Binding="{Binding Format}" Width="72"/>
+                                        <DataGridTextColumn IsReadOnly="True" Header="Title" Binding="{Binding DisplayTitle, Mode=OneWay}" Width="1.7*"/>
+                                        <DataGridTextColumn IsReadOnly="True" Header="Artist" Binding="{Binding DisplayArtist, Mode=OneWay}" Width="1.35*"/>
+                                        <DataGridTextColumn IsReadOnly="True" Header="Album" Binding="{Binding Album, Mode=OneWay}" Width="1.2*"/>
+                                        <DataGridTextColumn IsReadOnly="True" x:Name="MissingTagsColumn" Header="Missing tags" Binding="{Binding MissingTags, Mode=OneWay}" Width="1.5*" Visibility="Collapsed"/>
+                                        <DataGridTextColumn IsReadOnly="True" Header="Format" Binding="{Binding Format, Mode=OneWay}" Width="72"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </Grid>
@@ -271,12 +271,12 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="Title" Binding="{Binding DisplayTitle}" Width="2*"/>
-                                <DataGridTextColumn Header="Artist" Binding="{Binding DisplayArtist}" Width="1.5*"/>
-                                <DataGridTextColumn Header="Format" Binding="{Binding Format}" Width="80"/>
-                                <DataGridTextColumn Header="Imported" Binding="{Binding ImportedAtText}" Width="160"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Title" Binding="{Binding DisplayTitle, Mode=OneWay}" Width="2*"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Artist" Binding="{Binding DisplayArtist, Mode=OneWay}" Width="1.5*"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Format" Binding="{Binding Format, Mode=OneWay}" Width="80"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Imported" Binding="{Binding ImportedAtText, Mode=OneWay}" Width="160"/>
                                 <DataGridCheckBoxColumn Header="Serato" Binding="{Binding SeratoSynced}" Width="75"/>
-                                <DataGridTextColumn Header="Path" Binding="{Binding FilePath}" Width="2.5*"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Path" Binding="{Binding FilePath, Mode=OneWay}" Width="2.5*"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>
@@ -291,10 +291,10 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="Title" Binding="{Binding DisplayTitle}" Width="2*"/>
-                                <DataGridTextColumn Header="Artist" Binding="{Binding DisplayArtist}" Width="1.5*"/>
-                                <DataGridTextColumn Header="Format" Binding="{Binding Format}" Width="80"/>
-                                <DataGridTextColumn Header="Existing File" Binding="{Binding FilePath}" Width="3*"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Title" Binding="{Binding DisplayTitle, Mode=OneWay}" Width="2*"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Artist" Binding="{Binding DisplayArtist, Mode=OneWay}" Width="1.5*"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Format" Binding="{Binding Format, Mode=OneWay}" Width="80"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Existing File" Binding="{Binding FilePath, Mode=OneWay}" Width="3*"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>
@@ -309,12 +309,12 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="Group" Binding="{Binding GroupLabel}" Width="90"/>
-                                <DataGridTextColumn Header="Title" Binding="{Binding DisplayTitle}" Width="1.7*"/>
-                                <DataGridTextColumn Header="Artist" Binding="{Binding DisplayArtist}" Width="1.3*"/>
-                                <DataGridTextColumn Header="Copies" Binding="{Binding DuplicateCount}" Width="70"/>
-                                <DataGridTextColumn Header="Crates" Binding="{Binding Crates}" Width="1.8*"/>
-                                <DataGridTextColumn Header="Path" Binding="{Binding FilePath}" Width="2.7*"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Group" Binding="{Binding GroupLabel, Mode=OneWay}" Width="90"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Title" Binding="{Binding DisplayTitle, Mode=OneWay}" Width="1.7*"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Artist" Binding="{Binding DisplayArtist, Mode=OneWay}" Width="1.3*"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Copies" Binding="{Binding DuplicateCount, Mode=OneWay}" Width="70"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Crates" Binding="{Binding Crates, Mode=OneWay}" Width="1.8*"/>
+                                <DataGridTextColumn IsReadOnly="True" Header="Path" Binding="{Binding FilePath, Mode=OneWay}" Width="2.7*"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>

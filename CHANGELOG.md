@@ -1,3 +1,10 @@
+# Windows a1.10.0 - build 2
+
+- Prevent grid inline editing of read-only display properties. All track-list text columns are read-only with OneWay bindings; selection checkboxes and dedicated tag inputs remain editable.
+- Defer library double-click navigation until after the grid mouse event completes.
+- Add a rendered-grid regression that reproduces the read-only binding exception in the previous XAML, then verifies the corrected grid and double-click route.
+- Add best-effort crash reports at `%LOCALAPPDATA%\DeckReady\CrashReports\crash-latest.txt` and a visible Windows build 2 label. Public and MSI version remain a1.10.0 / 1.10.0.
+
 # Windows a1.10.0
 
 - Library double-click now opens the embedded tag editor; header double-clicks do not launch editing. Other metadata dialogs report errors instead of closing the app.

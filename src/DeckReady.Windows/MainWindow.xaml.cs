@@ -38,6 +38,7 @@ public partial class MainWindow : Window
     private bool _libraryOperationBusy;
     private int _visibleLibraryCount;
     private bool _updatingLibraryFilters;
+    private bool _tagEditorNavigationPending;
     private AppPage _currentPage = AppPage.Queue;
 
     private enum AppPage
@@ -560,13 +561,19 @@ public partial class MainWindow : Window
 
     private void LibraryGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
-        if (_selectionMode) return;
+        if (_selectionMode || _tagEditorNavigationPending || e.ChangedButton != MouseButton.Left) return;
         // Header/scrollbar double-clicks must not edit a previously selected song.
         if (e.OriginalSource is not DependencyObject source ||
             System.Windows.Controls.ItemsControl.ContainerFromElement(LibraryGrid, source)
                 is not System.Windows.Controls.DataGridRow row || row.Item is not LibraryTrack track) return;
         e.Handled = true;
-        EditLibraryTrack(track);
+        _tagEditorNavigationPending = true;
+        // Let the grid finish processing the mouse event before changing its page/selection.
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle, new Action(() =>
+        {
+            try { EditLibraryTrack(track); }
+            finally { _tagEditorNavigationPending = false; }
+        }));
     }
 
     private void RecentGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -618,6 +625,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
+            CrashReporter.Record("Open library tag editor", ex);
             _log.Error($"Could not open library tag editor: {ex}");
             MessageBox.Show(this, $"DeckReady could not open that track for editing.\n\n{ex.Message}", "Tag Editor", MessageBoxButton.OK, MessageBoxImage.Error);
         }
@@ -1050,7 +1058,7 @@ public partial class MainWindow : Window
         }
         finally
         {
-            TagEditorSaveButton.IsEnabled = true;
+            TagEditorSaveButton.IsEnabled = SelectedTagEditorTrack is { } selected && File.Exists(selected.FilePath);
         }
     }
 
@@ -1606,7 +1614,7 @@ public partial class MainWindow : Window
     private void About_Click(object sender, RoutedEventArgs e)
     {
         MessageBox.Show(this,
-            "DeckReady for Windows\nAlpha a1.10.0\n\nOrganize. Prepare. Play.\n\nIncludes Music Library browsing, song selection tools, the Serato duplicate checker, DeckReady Inbox automation, and community/support links in the Help menu.",
+            "DeckReady for Windows\nAlpha a1.10.0 (Windows build 2)\n\nOrganize. Prepare. Play.\n\nIncludes Music Library browsing, song selection tools, the Serato duplicate checker, DeckReady Inbox automation, and community/support links in the Help menu.",
             "About DeckReady", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 

@@ -1,5 +1,8 @@
 using System.IO;
 using System.Reflection;
+using System.Windows.Input;
+using System.Windows.Threading;
+using System.Windows.Media;
 using System.Windows;
 using System.Windows.Controls;
 using DeckReady;
@@ -8,7 +11,7 @@ using DeckReady.Models;
 internal static class Program
 {
     [STAThread]
-    private static void Main()
+    private static void Main(string[] args)
     {
         using var watchdog = new System.Threading.Timer(_ =>
         {
@@ -33,7 +36,59 @@ internal static class Program
             var complete = new LibraryTrack { FilePath = path + "other", Metadata = new TrackMetadata { Title="Song", Artist="Artist", Album="Album", Genre="Pop", Year="2026" } };
             window.LibraryItems.Add(incomplete);
             window.LibraryItems.Add(complete);
-            Call("EditLibraryTrack",incomplete);
+            // Render a real grid and enter its cell-edit path. The previous test only
+            // called the navigation helper, bypassing the DataGrid's edit machinery.
+            var settings = (AppSettings)typeof(MainWindow).GetField("_settings", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(window)!;
+            settings.AutoImportEnabled = false;
+            void Pump()
+            {
+                var frame = new DispatcherFrame();
+                window.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(() => frame.Continue = false));
+                Dispatcher.PushFrame(frame);
+            }
+            Call("ShowLibraryPage");
+            Call("ApplyLibraryFilters");
+            window.Show();
+            window.UpdateLayout();
+            Pump();
+            var grid = Control<DataGrid>("LibraryGrid");
+            grid.SelectedItem = incomplete;
+            var titleColumn = grid.Columns.OfType<DataGridTextColumn>().First();
+            grid.ScrollIntoView(incomplete, titleColumn);
+            grid.CurrentCell = new DataGridCellInfo(incomplete, titleColumn);
+            grid.Focus();
+            window.UpdateLayout();
+            Pump();
+            Check(grid.ItemContainerGenerator.ContainerFromItem(incomplete) is DataGridRow, "Track row must be rendered");
+            if (args.Contains("--reproduce-legacy-inline-edit"))
+            {
+                try
+                {
+                    var began = grid.BeginEdit();
+                    Pump();
+                    throw new Exception("Legacy grid did not reproduce the expected read-only binding exception; BeginEdit=" + began);
+                }
+                catch (InvalidOperationException ex) when (ex.ToString().Contains("read-only", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine("REPRODUCED previous-build crash: " + ex.Message);
+                }
+                return;
+            }
+            foreach (var column in grid.Columns.OfType<DataGridTextColumn>())
+            {
+                grid.CurrentCell = new DataGridCellInfo(incomplete, column);
+                Check(column.IsReadOnly, "Track text column must be read-only: " + column.Header);
+                Check(!grid.BeginEdit(), "Grid must not start an editor on display-only properties");
+            }
+            Check(grid.Columns.OfType<DataGridTemplateColumn>().Any(c => !c.IsReadOnly), "Selection checkbox column must remain interactive");
+            var row = (DataGridRow)grid.ItemContainerGenerator.ContainerFromItem(incomplete);
+            grid.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left)
+            {
+                RoutedEvent = System.Windows.Controls.Control.MouseDoubleClickEvent,
+                Source = row
+            });
+            Pump();
+            window.UpdateLayout();
             Check(Control<Grid>("TagEditorPage").Visibility == Visibility.Visible, "Library open must use embedded editor");
             Check(ReferenceEquals(Control<DataGrid>("TagEditorGrid").SelectedItem,incomplete), "Clicked song must be selected");
             Check(Control<TextBox>("TagTitleBox").IsEnabled, "Tag fields must be usable");
@@ -47,8 +102,11 @@ internal static class Program
             Check(!Control<Button>("TagEditorSaveButton").IsEnabled, "Empty review cannot save a stale selection");
             Call("ShowTagEditorPage",false);
             Check(Control<DataGrid>("TagEditorGrid").Items.Count == 2, "Normal tag editor still shows all tracks");
+            DeckReady.Services.CrashReporter.Record("UI regression check", new InvalidOperationException("diagnostic probe"));
+            var report = File.ReadAllText(DeckReady.Services.CrashReporter.ReportPath);
+            Check(report.Contains("diagnostic probe") && report.Contains("a1.10.0+windows.2"), "Crash report must include exception and build identity");
             Check(new FileInfo(path).Length == 0, "Opening/reviewing must not change audio");
-            Console.WriteLine("WPF library-open and tag review smoke checks passed.");
+            Console.WriteLine("Rendered-grid editing, double-click navigation, tag review and crash logging checks passed.");
         }
         finally { window.Close(); File.Delete(path); app.Shutdown(); }
     }
